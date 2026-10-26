@@ -1,4 +1,4 @@
-# Calorimetry line crossing
+# mig calorimetry
 
 Finds the final temperature of a coffee-cup calorimetry run by fitting a line to the temperature rise and another to the plateau, then solving for where they cross.
 
