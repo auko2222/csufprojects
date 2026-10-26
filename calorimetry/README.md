@@ -1,6 +1,6 @@
 # mig calorimetry
 
-Finds the final temperature of a coffee-cup calorimetry run by fitting a line to the temperature rise and another to the plateau, then solving for where they cross.
+Finds the final temperature of a coffee-cup calorimetry run by fitting a line to the plateau and extending it back to a vertical line at the mixing time.
 
 - **mig version** tab: sample data from an HCl + Mg / NaOH / NaHCO₃ lab.
 - **Import .gambl** tab: load your own Vernier Graphical Analysis file. It is read in your browser and never uploaded.

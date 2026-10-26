@@ -1,4 +1,8 @@
-# How the calorimetry line-crossing tool works
+# How the calorimetry tool works
+
+> **Method update (2026-10-26):** per the professor, the first line is a **vertical line at the mixing time**, not a fitted rise line. Final T = the plateau line extended back to that vertical line: T = m2·t_mix + b2. Sections 1, 6 and 7 below describe this method; the rise-line math in section 6 is kept for reference only.
+>
+> New final T: Trial 1 39.7, Trial 2 46.5, Trial 3 43.6, NaOH 28.7, NaHCO₃ 13.5 °C.
 
 Tool: open index.html, or the GitHub Pages link for this repo.
 
@@ -6,7 +10,7 @@ Tool: open index.html, or the GitHub Pages link for this repo.
 
 - In a coffee-cup calorimeter, the reaction heats (or cools) the solution, and you measure ΔT to get q = m·c·ΔT.
 - The cup starts leaking heat to the room **before the reaction is done**. So the highest reading you see is a little too low.
-- Fix: draw a line through the steep rise and a line through the slow cooling after the peak. Extend both lines until they cross. The temperature where they cross is about what you would have reached if the heat had all been released instantly, with no leak. That is the "final T".
+- Fix: draw a vertical line at the moment of mixing, and a best-fit line through the slow cooling after the peak. Extend the cooling line back until it hits the vertical line. That temperature is about what you would have reached if all the heat had been released the instant you mixed, with no leak. That is the "final T".
 - For an endothermic run (NaHCO₃ + HCl) it is the same idea flipped: a falling line and a slowly warming line.
 
 ## 2. The file: what a .gambl actually is
@@ -54,7 +58,13 @@ t̄ and T̄ are the averages of the points used.
               =INTERCEPT(B235:B625, A235:A625) → 39.90   (rows = 116.5 s to 311.5 s)
     Cross t:  =(D4−D2)/(D1−D3) → 49.1   (if the four results above are in D1, D2, D3, D4)
 
-## 6. Where the lines cross
+## 6. Final T
+
+Current method: plateau line T = m2·t + b2, vertical line at t = t_mix (the last steady reading before the temperature starts moving). Final T = m2·t_mix + b2.
+
+Trial 1: T = −0.0115(16.5) + 39.90 = 39.7 °C.
+
+Old method (crossing of a rise line and the plateau line), for reference:
 
 Rise line: T = m1·t + b1. Plateau line: T = m2·t + b2.
 

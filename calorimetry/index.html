@@ -61,7 +61,7 @@ small{color:var(--muted)}
   <button id="reset" type="button">Reset ranges</button>
 </div>
 <div class="row">
-  <label for="r0">Rise fit (s)</label><input type="number" id="r0" step="0.5"> – <input type="number" id="r1" step="0.5">
+  <label for="tm">Mixing time (s)</label><input type="number" id="tm" step="0.5">
   <label for="p0">Plateau fit (s)</label><input type="number" id="p0" step="0.5"> – <input type="number" id="p1" step="0.5">
 </div>
 <div id="readout"></div>
@@ -73,20 +73,20 @@ small{color:var(--muted)}
 <pre id="key" style="margin-top:16px;color:var(--muted)">Key
 T          temperature (°C)
 t          time since the run started (s)
-T = m t + b   a straight line: m = slope (°C per s), b = T where the line hits t = 0
-n          number of data points used for that line
-rise       best-fit line through the steep part (blue)
+mixing time   when the reaction started (blue vertical line)
 plateau    best-fit line through the slow part after the peak (orange)
+T = m t + b   a straight line: m = slope (°C per s), b = T where the line hits t = 0
+n          number of data points used for the plateau line
 
-Where the lines cross
-  m1 t + b1 = m2 t + b2   →   t = (b2 − b1) / (m1 − m2)
-  then T = m1 t + b1   (this T is the final T)
+Final T
+  extend the plateau line back to the vertical line
+  final T = m × (mixing time) + b
 
 initial T  average of the steady readings before mixing
 raw max    highest reading in the run (lowest for NaHCO3)
 ΔT         final T − initial T</pre>
 <div id="sheet" hidden>
-<p><small>Type the white boxes; the gray boxes fill in. Temperatures come from the graph tabs (final T = where the lines cross).</small></p>
+<p><small>Type the white boxes; the gray boxes fill in. Temperatures come from the graph tabs (final T = plateau line at the mixing time).</small></p>
 <div class="row"><button type="button" id="shMig">Autofill from preset data</button><button type="button" id="shClear">Clear</button>
 <label><input type="checkbox" id="shSolid" style="width:auto"> Count the solid's mass in the solution mass (A10, C10)</label></div>
 <h2>Reaction 1: Mg + HCl</h2><div class="scroll"><table id="shA"></table></div>
@@ -130,9 +130,8 @@ function defaults({t,T}){const n=t.length,k=Math.max(1,t.findIndex((_,i)=>Math.a
   let p=0;for(let i=0;i<n;i++)if(s*T[i]>s*T[p])p=i;const lo=T0+.25*(T[p]-T0),hi=T0+.75*(T[p]-T0),idx=[];
   for(let i=k;i<p;i++){const u=s*T[i];if(u>=s*lo&&u<=s*hi)idx.push(i)}
   if(idx.length<2){idx.length=0;for(let i=Math.min(k,n-2);i<=Math.max(p,Math.min(k,n-2)+1);i++)idx.push(i)}
-  return{r0:t[idx[0]],r1:t[idx[idx.length-1]],p0:t[Math.min(p+60,n-2)],p1:t[n-1],T0,ext:T[p]}}
-function solve(r,s){const A=fit(r.t,r.T,s.r0,s.r1),P=fit(r.t,r.T,s.p0,s.p1);
-  if(!A||!P||A.m===P.m)return{A,P};const tx=(P.b-A.b)/(A.m-P.m);return{A,P,tx,Tx:A.m*tx+A.b}}
+  return{tm:t[Math.max(0,k-1)],r0:t[idx[0]],r1:t[idx[idx.length-1]],p0:t[Math.min(p+60,n-2)],p1:t[n-1],T0,ext:T[p]}}
+function solve(r,s){const P=fit(r.t,r.T,s.p0,s.p1);if(!P||!isFinite(s.tm))return{P};return{P,tx:s.tm,Tx:P.m*s.tm+P.b}}
 const f=(x,d)=>x.toFixed(d), sg=(x,d)=>(x<0?"- ":"+ ")+Math.abs(x).toFixed(d);
 let run,sel;
 function draw(res){const{t,T}=run,W=720,H=360,L=44,R=10,TP=10,B=32,sv=$("chart");sv.textContent="";
@@ -147,20 +146,20 @@ function draw(res){const{t,T}=run,W=720,H=360,L=44,R=10,TP=10,B=32,sv=$("chart")
   let d="";t.forEach((v,i)=>d+=(i?"L":"M")+X(v).toFixed(1)+" "+Y(T[i]).toFixed(1));
   el("path",{d,fill:"none",stroke:"var(--data)","stroke-width":1.3});
   const hl=(a,b,c)=>{let d="";t.forEach((v,i)=>{if(v>=a&&v<=b)d+=(d?"L":"M")+X(v).toFixed(1)+" "+Y(T[i]).toFixed(1)});if(d)el("path",{d,fill:"none",stroke:c,"stroke-width":2.5})};
-  hl(sel.r0,sel.r1,"var(--a)");hl(sel.p0,sel.p1,"var(--b)");
+  hl(sel.p0,sel.p1,"var(--b)");
   const ln=(F,c)=>F&&el("line",{x1:X(0),y1:Y(F.b),x2:X(tm),y2:Y(F.m*tm+F.b),stroke:c,"stroke-width":1,"stroke-dasharray":"4 3","clip-path":"url(#c)"});
-  ln(res.A,"var(--a)");ln(res.P,"var(--b)");
+  if(isFinite(sel.tm))el("line",{x1:X(sel.tm),x2:X(sel.tm),y1:TP,y2:H-B,stroke:"var(--a)","stroke-width":1.5,"stroke-dasharray":"4 3"});ln(res.P,"var(--b)");
   if(res.Tx!=null)el("circle",{cx:X(res.tx),cy:Y(res.Tx),r:4,fill:"none",stroke:"var(--x)","stroke-width":2});
   geo={X,Y,L,R,W,TP,H,B,tm};lastRes=res;cursor()}
 let geo,lastRes,curT=null,drag=false;
 function cursor(){const sv=$("chart"),old=$("cur");if(old)old.remove();if(!geo)return;
-  const{X,Y,TP,H,B,tm}=geo,{t,T}=run,{A,P}=lastRes;let want=curT??lastRes.tx??0;want=Math.max(0,Math.min(tm,want));
+  const{X,Y,TP,H,B,tm}=geo,{t,T}=run,{P}=lastRes;let want=curT??lastRes.tx??0;want=Math.max(0,Math.min(tm,want));
   let i=0;for(let j=1;j<t.length;j++)if(Math.abs(t[j]-want)<Math.abs(t[i]-want))i=j;const tv=t[i];
   const g=document.createElementNS(NS,"g");g.id="cur";const mk=(n,a)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);g.appendChild(e)};
   mk("line",{x1:X(tv),x2:X(tv),y1:TP,y2:H-B,stroke:"var(--fg)","stroke-width":1,opacity:.5});
   mk("circle",{cx:X(tv),cy:Y(T[i]),r:5,fill:"var(--fg)"});sv.appendChild(g);
   let h=`<span>t <b>${f(tv,1)} s</b></span><span>T <b>${f(T[i],2)} °C</b></span>`;
-  if(A)h+=`<span class="ra">rise line ${f(A.m*tv+A.b,2)}</span>`;if(P)h+=`<span class="rb">plateau line ${f(P.m*tv+P.b,2)}</span>`;
+  if(P)h+=`<span class="rb">plateau line ${f(P.m*tv+P.b,2)}</span>`;
   $("readout").innerHTML=h}
 function scrub(e){const sv=$("chart"),r=sv.getBoundingClientRect(),vx=(e.clientX-r.left)/r.width*720;
   curT=(vx-geo.L)/(geo.W-geo.L-geo.R)*geo.tm;cursor()}
@@ -168,29 +167,27 @@ function scrub(e){const sv=$("chart"),r=sv.getBoundingClientRect(),vx=(e.clientX
   sv.addEventListener("pointerdown",e=>{drag=true;try{sv.setPointerCapture(e.pointerId)}catch(_){}scrub(e)});
   sv.addEventListener("pointermove",e=>{if(drag||e.pointerType==="mouse")scrub(e)});
   for(const ev of["pointerup","pointercancel"])sv.addEventListener(ev,()=>drag=false);}
-function update(){for(const k of["r0","r1","p0","p1"])sel[k]=+$(k).value;selMap[run.name]={r0:sel.r0,r1:sel.r1,p0:sel.p0,p1:sel.p1};const res=solve(run,sel),{A,P}=res,d=defaults(run);draw(res);
-  if(!A||!P){$("out").textContent="Each fit range needs at least 2 points.";return}
-  if(res.Tx==null){$("out").textContent="Lines are parallel.";return}
+function update(){for(const k of["tm","p0","p1"])sel[k]=parseFloat($(k).value);selMap[run.name]={tm:sel.tm,p0:sel.p0,p1:sel.p1};const res=solve(run,sel),{P}=res,d=defaults(run);draw(res);
+  if(!P){$("out").textContent="The plateau fit range needs at least 2 points.";return}
+  if(res.Tx==null){$("out").textContent="Enter a mixing time.";return}
   $("out").textContent=
-`rise:     T = ${f(A.m,4)} t ${sg(A.b,2)}   (n=${A.n}, ${sel.r0}–${sel.r1} s)
-plateau:  T = ${f(P.m,4)} t ${sg(P.b,2)}   (n=${P.n}, ${sel.p0}–${sel.p1} s)
+`plateau:  T = ${f(P.m,4)} t ${sg(P.b,2)}   (n=${P.n}, ${sel.p0}–${sel.p1} s)
+vertical line at the mixing time:  t = ${f(sel.tm,1)} s
 
-${f(A.m,4)} t ${sg(A.b,2)} = ${f(P.m,4)} t ${sg(P.b,2)}
-t = (${f(P.b,2)} - ${f(A.b,2)}) / (${f(A.m,4)} - ${f(P.m,4)}) = ${f(res.tx,1)} s
-T = ${f(A.m,4)}(${f(res.tx,1)}) ${sg(A.b,2)} = ${f(res.Tx,2)} °C
+T = ${f(P.m,4)}(${f(sel.tm,1)}) ${sg(P.b,2)} = ${f(res.Tx,2)} °C
 
 initial T  ${f(d.T0,2)} °C
 final T    ${f(res.Tx,2)} °C   (raw ${d.ext>d.T0?"max":"min"} ${f(d.ext,2)} °C)
 ΔT         ${f(res.Tx-d.T0,2)} °C`}
-function load(i){run=RUNS[i];curT=null;sel=defaults(run);for(const k of["r0","r1","p0","p1"])$(k).value=sel[k];update()}
+function load(i){run=RUNS[i];curT=null;sel=defaults(run);for(const k of["tm","p0","p1"])$(k).value=sel[k];update()}
 const esc=x=>String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
 const selMap={};let currentFile=null,importedName=null;
 function setRuns(list){RUNS=list;for(const k in selMap)delete selMap[k];const sel_=$("run");sel_.textContent="";RUNS.forEach((r,i)=>sel_.add(new Option(r.name,i)));
-  let h="<tr><th>Run</th><th>Initial T</th><th>Raw max/min</th><th>Final T (intersect)</th><th>ΔT</th></tr>";
+  let h="<tr><th>Run</th><th>Initial T</th><th>Raw max/min</th><th>Final T</th><th>ΔT</th></tr>";
   for(const r of RUNS){const d=defaults(r),x=solve(r,d),ok=x.Tx!=null;h+=`<tr><td>${esc(r.name)}</td><td>${f(d.T0,2)}</td><td>${f(d.ext,2)}</td><td>${ok?f(x.Tx,2):"–"}</td><td>${ok?f(x.Tx-d.T0,2):"–"}</td></tr>`}
   $("sum").innerHTML=h;load(0)}
 $("run").onchange=e=>load(+e.target.value);$("reset").onclick=()=>load(+$("run").value);
-for(const k of["r0","r1","p0","p1"])$(k).addEventListener("input",update);
+for(const k of["tm","p0","p1"])$(k).addEventListener("input",update);
 // ---- .gambl import: a .gambl is a tar archive holding vstudm/data.udm (XML) ----
 let imported=null;
 async function bytesOf(file){let buf=new Uint8Array(await file.arrayBuffer());
@@ -296,9 +293,9 @@ const XL=(()=>{
     const n=c.last;
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><c:roundedCorners val="0"/><c:chart><c:title>${rt(c.title).replace('sz="1100" b="0"/></a:pPr><a:r><a:rPr sz="1100" b="0"/>','sz="1300" b="1"/></a:pPr><a:r><a:rPr sz="1300" b="1"/>')}</c:title><c:autoTitleDeleted val="0"/><c:plotArea><c:layout/><c:scatterChart><c:scatterStyle val="lineMarker"/><c:varyColors val="0"/>`+
       ser(0,"Measured temperature",`$A$2:$A$${n}`,`$B$2:$B$${n}`,"7F7F7F",false)+
-      ser(1,"Rise line",`$A$2:$A$${n}`,`$C$2:$C$${n}`,"1A5FB4",true)+
+      ser(1,"Mixing time (vertical line)","$I$3:$I$4","$J$3:$J$4","1A5FB4",true)+
       ser(2,"Plateau line",`$A$2:$A$${n}`,`$D$2:$D$${n}`,"C64600",true)+
-      ser(3,"Where they cross (final T)","$G$13","$G$14","C01C28",false,true)+
+      ser(3,"Final T","$G$13","$G$14","C01C28",false,true)+
       `<c:axId val="10"/><c:axId val="20"/></c:scatterChart>`+ax(10,20,"b","Time (s)",0,c.tmax,0)+ax(20,10,"l","Temperature (°C)",c.ymin,c.ymax,0)+
       `</c:plotArea><c:legend><c:legendPos val="b"/><c:overlay val="0"/></c:legend><c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart></c:chartSpace>`}
   const drawingXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><xdr:twoCellAnchor><xdr:from><xdr:col>5</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>18</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:to><xdr:col>15</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>42</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to><xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="Chart 1"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="rId1"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>`;
@@ -324,31 +321,31 @@ const XL=(()=>{
   function build(runs,selFor,report){
     const used=new Set(["summary","report sheet"]),sheets=[],summary=new Sheet("Summary");sheets.push(summary);
     summary.cols=[24,13,13,13,16,16,14];
-    summary.set(0,1,"Calorimetry: final temperature by line intersection",S.title);
-    summary.set(0,2,"Each run sheet fits a line to the rise and to the plateau with SLOPE/INTERCEPT, then solves for where they cross. Edit the fit ranges there and everything updates.",S.ital);
-    ["Run","Initial T (°C)","Final T (°C)","ΔT (°C)","Raw max/min (°C)","Crossing time (s)","Points used"].forEach((h,i)=>summary.set(i,4,h,S.head));
+    summary.set(0,1,"Calorimetry: final temperature by extrapolation",S.title);
+    summary.set(0,2,"Each run sheet fits a line to the plateau with SLOPE/INTERCEPT and extends it back to a vertical line at the mixing time. Final T is where they meet.",S.ital);
+    ["Run","Initial T (°C)","Final T (°C)","ΔT (°C)","Raw max/min (°C)","Mixing time (s)","Points used"].forEach((h,i)=>summary.set(i,4,h,S.head));
     runs.forEach((r,ri)=>{const sn=sheetName(r.name,used),sh=new Sheet(sn);sh.freeze=true;sh.cols=[10,16,14,14,3,24,14];
       const d=defaults(r),s=selFor(r)||d,res=solve(r,s),n=r.t.length,last=n+1;
-      ["Time (s)","Temperature (°C)","Rise line (°C)","Plateau line (°C)"].forEach((h,i)=>sh.set(i,1,h,S.head));
+      ["Time (s)","Temperature (°C)","","Plateau line (°C)"].forEach((h,i)=>sh.set(i,1,h,S.head));
       let ra=null,rb=null,pa=null,pb=null,k=Math.max(1,r.t.findIndex((_,i)=>Math.abs(r.T[i]-r.T[0])>0.3));
       for(let i=0;i<n;i++){const t=r.t[i],row=i+2;sh.set(0,row,t,S.n1);sh.set(1,row,r.T[i],S.n2);
-        if(t>=s.r0&&t<=s.r1){ra??=row;rb=row}if(t>=s.p0&&t<=s.p1){pa??=row;pb=row}}
-      const tx=res.tx,lo=Math.min(s.r0,tx??s.r0)-10,hiR=Math.max(s.r1,tx??s.r1)+15,loP=Math.min(s.p0,tx??s.p0)-15;
+        if(t>=s.p0&&t<=s.p1){pa??=row;pb=row}}
+      const tx=res.tx,loP=s.tm;
       for(let i=0;i<n;i++){const t=r.t[i],row=i+2;
-        if(res.A&&t>=lo&&t<=hiR)sh.set(2,row,res.A.m*t+res.A.b,S.n2,`$G$8*A${row}+$G$9`);
+        
         if(res.P&&t>=loP)sh.set(3,row,res.P.m*t+res.P.b,S.n2,`$G$10*A${row}+$G$11`)}
-      const info=[[1,"Run",r.name,0],[3,"Rise fit from (s), for reference",s.r0,S.n1],[4,"Rise fit to (s)",s.r1,S.n1],[5,"Plateau fit from (s)",s.p0,S.n1],[6,"Plateau fit to (s)",s.p1,S.n1]];
+      const info=[[1,"Run",r.name,0],[3,"Mixing time (s), vertical line",s.tm,S.n1],[5,"Plateau fit from (s), for reference",s.p0,S.n1],[6,"Plateau fit to (s), for reference",s.p1,S.n1]];
       for(const[row,l,v,st]of info){sh.set(5,row,l,S.head);sh.set(6,row,v,st)}
-      sh.set(5,7,"Change the fit by editing the row ranges in G8:G11",S.ital);
+      sh.set(5,7,"Change G3 to move the vertical line; edit the row ranges in G10:G11 to change the plateau fit",S.ital);
       const RR=ra&&rb?`B${ra}:B${rb},A${ra}:A${rb}`:"B2:B3,A2:A3",PP=pa&&pb?`B${pa}:B${pb},A${pa}:A${pb}`:"B2:B3,A2:A3";
-      const calc=[[8,"Rise slope m1 (°C/s)",res.A?.m,`SLOPE(${RR})`,S.g4],[9,"Rise intercept b1 (°C)",res.A?.b,`INTERCEPT(${RR})`,S.g4],
-        [10,"Plateau slope m2 (°C/s)",res.P?.m,`SLOPE(${PP})`,S.g4],[11,"Plateau intercept b2 (°C)",res.P?.b,`INTERCEPT(${PP})`,S.g4],
-        [13,"Crossing time t (s)",tx,"(G11-G9)/(G8-G10)",S.g2],[14,"Final T (°C)",res.Tx,"G8*G13+G9",S.g2],
+      const calc=[[10,"Plateau slope m2 (°C/s)",res.P?.m,`SLOPE(${PP})`,S.g4],[11,"Plateau intercept b2 (°C)",res.P?.b,`INTERCEPT(${PP})`,S.g4],
+        [13,"Vertical line at t (s)",tx,"G3",S.g2],[14,"Final T (°C)",res.Tx,"G10*G13+G11",S.g2],
         [15,"Initial T (°C)",d.T0,`AVERAGE(B2:B${k+1})`,S.g2],[16,"ΔT (°C)",(res.Tx??NaN)-d.T0,"G14-G15",S.g2]];
       for(const[row,l,v,fm,st]of calc){sh.set(5,row,l,S.head);sh.set(6,row,v??NaN,st,fm)}
-      sh.set(5,17,"t = (b2 − b1) / (m1 − m2), then T = m1·t + b1",S.ital);
+      sh.set(5,17,"Final T = plateau line at the mixing time: T = m2·t + b2",S.ital);
       const all=r.T.concat(res.Tx!=null?[res.Tx]:[]);
       sh.chart={sheet:sn,last,title:r.name,tmax:Math.ceil(r.t[n-1]/50)*50,ymin:Math.floor(Math.min(...all)-1),ymax:Math.ceil(Math.max(...all)+1)};
+      sh.set(8,2,"Vertical line t (s)",S.head);sh.set(9,2,"T (°C)",S.head);sh.set(8,3,s.tm,S.n1,"$G$3");sh.set(8,4,s.tm,S.n1,"$G$3");sh.set(9,3,sh.chart.ymin);sh.set(9,4,sh.chart.ymax);sh.cols[8]=18;sh.cols[9]=10;
       sheets.push(sh);
       const row=5+ri,R=q(sn);
       summary.set(0,row,r.name);summary.set(1,row,d.T0,S.n2,`${R}!G15`);summary.set(2,row,res.Tx??NaN,S.n2,`${R}!G14`);
@@ -408,6 +405,8 @@ async function exportExcel(){const msg=$("xlMsg");
   catch(err){msg.textContent="Couldn't build the workbook: "+err.message}}
 
 $("xlBtn").onclick=exportExcel;
+MIG.forEach((r,i)=>{const d=defaults(r),x=solve(r,d),key=["A?_0","A?_1","A?_2","B?_0","C?_0"][i];if(!key)return;
+  const[ni,nf]=key[0]==="B"?[8,9]:[6,7];MIGSHEET[key.replace("?",ni)]=+d.T0.toFixed(1);MIGSHEET[key.replace("?",nf)]=+x.Tx.toFixed(1)});
 buildSheet();fillSheet(MIGSHEET);
 $("shMig").onclick=()=>fillSheet(MIGSHEET);$("shClear").onclick=()=>fillSheet({});$("shSolid").onchange=calcSheet;
 setRuns(MIG);
