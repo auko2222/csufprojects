@@ -392,16 +392,19 @@ const XL=(()=>{
 const REPORT_F={A3:"{A2}-{A1}",A5:"{A4}/24.305",A8:"{A7}-{A6}",A9:"4.184",A10:"{A3}*{A9}*{A8}",A10s:"({A3}+{A4})*{A9}*{A8}",A11:"-({A10}/1000)/{A5}",
   B4:"{B3}-{B1}",B5:"{B3}-{B2}",B7:"{B5}*{B6}/1000",B10:"{B9}-{B8}",B11:"4.184",B12:"{B4}*{B11}*{B10}",B13:"-({B12}/1000)/{B7}",
   C3:"{C2}-{C1}",C5:"{C4}/84.007",C8:"{C7}-{C6}",C9:"4.184",C10:"{C3}*{C9}*ABS({C8})",C10s:"({C3}+{C4})*{C9}*ABS({C8})",C11:"({C10}/1000)/{C5}"};
-function exportExcel(){const msg=$("xlMsg");
+async function exportExcel(){const msg=$("xlMsg");
   try{const rep={};document.querySelectorAll("#sheet input[type=number]").forEach(e=>rep[e.id]=e.value);
     document.querySelectorAll("#sheet td.c").forEach(e=>rep[e.id]=e.textContent);
     const solid=$("shSolid").checked;
     rep.formula=(id,ref)=>{const t=REPORT_F[solid&&REPORT_F[id+"s"]?id+"s":id];return t.replace(/\{([ABC]\d+)\}/g,(_,n)=>ref(n))};
     const blob=XL.build(RUNS,r=>selMap[r.name],rep);
     const name=(currentFile||"mig").replace(/\.gambl$/i,"").replace(/[^\w.-]+/g,"_")+"-calorimetry.xlsx";
+    window.__lastXlsx=blob;
+    const dl=window.claude?.use?await window.claude.use("downloads").catch(()=>null):null;
+    if(dl){try{await dl.save({filename:name,data:blob});msg.textContent=`Saved ${name}.`}catch(e){msg.textContent=e?.code==="declined"?"Download cancelled.":"Downloads aren't available here; use the GitHub Pages link."}return}
     const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
     setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);
-    msg.textContent=`Built ${name}. If no download started, this viewer blocks downloads; open the GitHub Pages link instead.`;window.__lastXlsx=blob}
+    msg.textContent=`Downloaded ${name}.`}
   catch(err){msg.textContent="Couldn't build the workbook: "+err.message}}
 
 $("xlBtn").onclick=exportExcel;
