@@ -168,7 +168,7 @@ function scrub(e){const sv=$("chart"),r=sv.getBoundingClientRect(),vx=(e.clientX
   sv.addEventListener("pointerdown",e=>{drag=true;try{sv.setPointerCapture(e.pointerId)}catch(_){}scrub(e)});
   sv.addEventListener("pointermove",e=>{if(drag||e.pointerType==="mouse")scrub(e)});
   for(const ev of["pointerup","pointercancel"])sv.addEventListener(ev,()=>drag=false);}
-function update(){for(const k of["tm","p0","p1"])sel[k]=parseFloat($(k).value);selMap[run.name]={tm:sel.tm,p0:sel.p0,p1:sel.p1};const res=solve(run,sel),{P}=res,d=defaults(run);draw(res);
+function update(){for(const k of["tm","p0","p1"])sel[k]=parseFloat($(k).value);selMap[keyFor(run)]={tm:sel.tm,p0:sel.p0,p1:sel.p1};saveSel();const res=solve(run,sel),{P}=res,d=defaults(run);draw(res);
   if(!P){$("out").textContent="The plateau fit range needs at least 2 points.";return}
   if(res.Tx==null){$("out").textContent="Enter a mixing time.";return}
   $("out").textContent=
@@ -180,14 +180,15 @@ T = ${f(P.m,4)}(${f(sel.tm,1)}) ${sg(P.b,2)} = ${f(res.Tx,2)} °C
 initial T  ${f(d.T0,2)} °C
 final T    ${f(res.Tx,2)} °C   (raw ${d.ext>d.T0?"max":"min"} ${f(d.ext,2)} °C)
 ΔT         ${f(res.Tx-d.T0,2)} °C`}
-function load(i){run=RUNS[i];curT=null;sel=defaults(run);for(const k of["tm","p0","p1"])$(k).value=sel[k];update()}
+function load(i){run=RUNS[i];curT=null;sel={...defaults(run),...(selMap[keyFor(run)]||{})};for(const k of["tm","p0","p1"])$(k).value=sel[k];update()}
 const esc=x=>String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
-const selMap={};let currentFile=null,importedName=null;
-function setRuns(list){RUNS=list;for(const k in selMap)delete selMap[k];const sel_=$("run");sel_.textContent="";RUNS.forEach((r,i)=>sel_.add(new Option(r.name,i)));
+let selMap={};try{selMap=JSON.parse(localStorage.getItem("calx-sel"))||{}}catch(e){}
+const saveSel=()=>{try{localStorage.setItem("calx-sel",JSON.stringify(selMap))}catch(e){}},keyFor=r=>(currentFile||"mig")+"|"+r.name;let currentFile=null,importedName=null;
+function setRuns(list){RUNS=list;const sel_=$("run");sel_.textContent="";RUNS.forEach((r,i)=>sel_.add(new Option(r.name,i)));
   let h="<tr><th>Run</th><th>Initial T</th><th>Raw max/min</th><th>Final T</th><th>ΔT</th></tr>";
   for(const r of RUNS){const d=defaults(r),x=solve(r,d),ok=x.Tx!=null;h+=`<tr><td>${esc(r.name)}</td><td>${f(d.T0,2)}</td><td>${f(d.ext,2)}</td><td>${ok?f(x.Tx,2):"–"}</td><td>${ok?f(x.Tx-d.T0,2):"–"}</td></tr>`}
   $("sum").innerHTML=h;load(0)}
-$("run").onchange=e=>load(+e.target.value);$("reset").onclick=()=>load(+$("run").value);
+$("run").onchange=e=>load(+e.target.value);$("reset").onclick=()=>{delete selMap[keyFor(run)];saveSel();load(+$("run").value)};
 for(const k of["tm","p0","p1"])$(k).addEventListener("input",update);
 // ---- .gambl import: a .gambl is a tar archive holding vstudm/data.udm (XML) ----
 let imported=null;
@@ -413,7 +414,7 @@ async function exportExcel(){const msg=$("xlMsg");
     document.querySelectorAll("#sheet td.c").forEach(e=>rep[e.id]=e.textContent);
     const solid=$("shSolid").checked;
     rep.formula=(id,ref)=>{const t=REPORT_F[solid&&REPORT_F[id+"s"]?id+"s":id];return t.replace(/\{([ABC]\d+)\}/g,(_,n)=>ref(n))};
-    const blob=XL.build(RUNS,r=>selMap[r.name],rep);
+    const blob=XL.build(RUNS,r=>selMap[keyFor(r)],rep);
     const name=(currentFile||"mig").replace(/\.gambl$/i,"").replace(/[^\w.-]+/g,"_")+"-calorimetry.xlsx";
     window.__lastXlsx=blob;
     const dl=window.claude?.use?await window.claude.use("downloads").catch(()=>null):null;
@@ -424,10 +425,10 @@ async function exportExcel(){const msg=$("xlMsg");
   catch(err){msg.textContent="Couldn't build the workbook: "+err.message}}
 
 $("xlBtn").onclick=exportExcel;
-MIG.forEach((r,i)=>{const d=defaults(r),x=solve(r,d),key=["A?_0","A?_1","A?_2","B?_0","C?_0"][i];if(!key)return;
-  const[ni,nf]=key[0]==="B"?[8,9]:[6,7];MIGSHEET[key.replace("?",ni)]=+d.T0.toFixed(1);MIGSHEET[key.replace("?",nf)]=+x.Tx.toFixed(1)});
-buildSheet();fillSheet(MIGSHEET);
-$("shMig").onclick=()=>fillSheet(MIGSHEET);$("shClear").onclick=()=>fillSheet({});$("shSolid").onchange=calcSheet;
+function migSheet(){const o={...MIGSHEET};MIG.forEach((r,i)=>{const d=defaults(r),x=solve(r,{...d,...(selMap["mig|"+r.name]||{})}),key=["A?_0","A?_1","A?_2","B?_0","C?_0"][i];if(!key)return;
+  const[ni,nf]=key[0]==="B"?[8,9]:[6,7];o[key.replace("?",ni)]=+d.T0.toFixed(1);if(x.Tx!=null)o[key.replace("?",nf)]=+x.Tx.toFixed(1)});return o}
+buildSheet();fillSheet(migSheet());
+$("shMig").onclick=()=>fillSheet(migSheet());$("shClear").onclick=()=>fillSheet({});$("shSolid").onchange=calcSheet;
 setRuns(MIG);
 </script>
 
