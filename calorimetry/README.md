@@ -1,0 +1,8 @@
+# Calorimetry line crossing
+
+Finds the final temperature of a coffee-cup calorimetry run by fitting a line to the temperature rise and another to the plateau, then solving for where they cross.
+
+- **mig version** tab: sample data from an HCl + Mg / NaOH / NaHCO₃ lab.
+- **Import .gambl** tab: load your own Vernier Graphical Analysis file. It is read in your browser and never uploaded.
+
+Everything is in `index.html`, with no dependencies, and it works offline. How it works: [HOW-IT-WORKS.md](HOW-IT-WORKS.md).
