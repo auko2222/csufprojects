@@ -331,11 +331,11 @@ const XL=(()=>{
     if(k==="A"&&trial<3&&isFinite(g(`A4_${trial}`))&&isFinite(g(`A3_${trial}`)))mid=`${g(`A4_${trial}`)} g of Mg was added to ${g(`A3_${trial}`).toFixed(2)} g of HCl in a coffee cup calorimeter. `;
     if(k==="B"&&isFinite(g("B5_0"))&&isFinite(g("B2_0"))&&isFinite(g("B1_0")))mid=`${(g("B2_0")-g("B1_0")).toFixed(2)} g of NaOH solution was mixed with ${g("B5_0").toFixed(2)} g of ${isFinite(g("B6_0"))?g("B6_0")+" M ":""}HCl in a coffee cup calorimeter. `;
     if(k==="C"&&isFinite(g("C4_0"))&&isFinite(g("C3_0")))mid=`${g("C4_0")} g of NaHCO3 was added to ${g("C3_0").toFixed(2)} g of HCl in a coffee cup calorimeter. `;
-    const dir=res.Tx>=d.T0?"rose":"fell";
+    const dir=res.Tx>=d.T0?"rose":"fell",slope=res.Tx>=d.T0?"cooling":"warming";
     const dh=k==="A"&&trial<3?g(`A11_${trial}`):k==="B"?g("B13_0"):k==="C"?g("C11_0"):NaN;
     const dhs=k==="A"&&trial<3?rep?.[`A11_${trial}`]:k==="B"?rep?.B13_0:k==="C"?rep?.C11_0:"",end=isFinite(dh)?` ΔHrxn = ${dhs} kJ/mol.`:"";
-    const f=`="${q2(pre+mid)}Starting at Ti = ${T("G15","0.0")} °C, the temperature ${dir} to a final temperature Tf = ${T("G14","0.0")} °C, found by extending the cooling line back to the mixing time (${T("G13","0.0")} s). ΔT = ${T("G16","0.0")} °C.${q2(end)}"`;
-    const v=`${pre+mid}Starting at Ti = ${Tv(d.T0,1)} °C, the temperature ${dir} to a final temperature Tf = ${Tv(res.Tx,1)} °C, found by extending the cooling line back to the mixing time (${Tv(res.tx,1)} s). ΔT = ${Tv(res.Tx-d.T0,1)} °C.${end}`;
+    const f=`="${q2(pre+mid)}Starting at Ti = ${T("G15","0.0")} °C, the temperature ${dir} to a final temperature Tf = ${T("G14","0.0")} °C. The horizontal line marks Ti, the vertical line marks the mixing time (${T("G13","0.0")} s), and the sloped line is the ${q2(slope)} trend after the reaction, extended back; Tf is where the sloped and vertical lines cross. ΔT = ${T("G16","0.0")} °C.${q2(end)}"`;
+    const v=`${pre+mid}Starting at Ti = ${Tv(d.T0,1)} °C, the temperature ${dir} to a final temperature Tf = ${Tv(res.Tx,1)} °C. The horizontal line marks Ti, the vertical line marks the mixing time (${Tv(res.tx,1)} s), and the sloped line is the ${slope} trend after the reaction, extended back; Tf is where the sloped and vertical lines cross. ΔT = ${Tv(res.Tx-d.T0,1)} °C.${end}`;
     return{f:f.slice(1),v}}
   function build(runs,selFor,report){kindCount={};
     const meta=runs.meta||{},used=new Set(["summary","report sheet","data"]),sheets=[];
@@ -374,7 +374,7 @@ const XL=(()=>{
       for(const[row,l,v,fm,st]of calc){sh.set(5,row,l,S.head);sh.set(6,row,v??NaN,st,fm)}
       
       const all=r.T.concat(res.Tx!=null?[res.Tx]:[]);
-      sh.chart={sheet:sn,title:r.name,xtitle:"Time (s)",ytitle:"Temperature (°C)",xmin:0,xmax:Math.ceil(r.t[n-1]/50)*50,ymin:Math.floor(Math.min(...all)-1),ymax:Math.ceil(Math.max(...all)+1),yunit:1,anchor:[5,18,15,42],
+      sh.chart={sheet:sn,title:r.name,xtitle:"Time (s)",ytitle:"Temperature (°C)",xmin:0,xmax:Math.ceil(r.t[n-1]/10)*10,ymin:Math.floor(Math.min(...all)-1),ymax:Math.ceil(Math.max(...all)+1),yunit:1,anchor:[5,18,15,42],
         series:[{name:"Temperature",x:`$A$2:$A$${last}`,y:`$B$2:$B$${last}`,color:clr(r,ri)},{name:"Mixing time",x:"$I$3:$I$4",y:"$J$3:$J$4",color:"404040",dash:true},
           {name:"Plateau line",x:`$A$2:$A$${last}`,y:`$D$2:$D$${last}`,color:"404040",dash:true},{name:"Ti",x:"$K$3:$K$4",y:"$L$3:$L$4",color:"808080",dash:true,label:{idx:1,pos:"t"}},
           {name:"Tf",x:"$G$13",y:"$G$14",color:"000000",marker:true,label:{idx:0,pos:"r"}}]};
