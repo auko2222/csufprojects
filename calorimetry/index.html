@@ -49,6 +49,7 @@ small{color:var(--muted)}
   <button id="tabImp" role="tab" type="button" aria-selected="false">Import .gambl</button>
   <button id="tabSheet" role="tab" type="button" aria-selected="false">Report sheet</button>
 </div>
+<div class="row"><button type="button" id="xlBtn">Download Excel workbook</button><small id="xlMsg"></small></div>
 <div id="importBox" hidden>
   <p>Pick a Vernier Graphical Analysis file (.gambl) from your device. It is read in your browser and never uploaded anywhere.</p>
   <input type="file" id="file">
@@ -167,7 +168,7 @@ function scrub(e){const sv=$("chart"),r=sv.getBoundingClientRect(),vx=(e.clientX
   sv.addEventListener("pointerdown",e=>{drag=true;try{sv.setPointerCapture(e.pointerId)}catch(_){}scrub(e)});
   sv.addEventListener("pointermove",e=>{if(drag||e.pointerType==="mouse")scrub(e)});
   for(const ev of["pointerup","pointercancel"])sv.addEventListener(ev,()=>drag=false);}
-function update(){for(const k of["r0","r1","p0","p1"])sel[k]=+$(k).value;const res=solve(run,sel),{A,P}=res,d=defaults(run);draw(res);
+function update(){for(const k of["r0","r1","p0","p1"])sel[k]=+$(k).value;selMap[run.name]={r0:sel.r0,r1:sel.r1,p0:sel.p0,p1:sel.p1};const res=solve(run,sel),{A,P}=res,d=defaults(run);draw(res);
   if(!A||!P){$("out").textContent="Each fit range needs at least 2 points.";return}
   if(res.Tx==null){$("out").textContent="Lines are parallel.";return}
   $("out").textContent=
@@ -183,7 +184,8 @@ final T    ${f(res.Tx,2)} °C   (raw ${d.ext>d.T0?"max":"min"} ${f(d.ext,2)} °C
 ΔT         ${f(res.Tx-d.T0,2)} °C`}
 function load(i){run=RUNS[i];curT=null;sel=defaults(run);for(const k of["r0","r1","p0","p1"])$(k).value=sel[k];update()}
 const esc=x=>String(x).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
-function setRuns(list){RUNS=list;const sel_=$("run");sel_.textContent="";RUNS.forEach((r,i)=>sel_.add(new Option(r.name,i)));
+const selMap={};let currentFile=null,importedName=null;
+function setRuns(list){RUNS=list;for(const k in selMap)delete selMap[k];const sel_=$("run");sel_.textContent="";RUNS.forEach((r,i)=>sel_.add(new Option(r.name,i)));
   let h="<tr><th>Run</th><th>Initial T</th><th>Raw max/min</th><th>Final T (intersect)</th><th>ΔT</th></tr>";
   for(const r of RUNS){const d=defaults(r),x=solve(r,d),ok=x.Tx!=null;h+=`<tr><td>${esc(r.name)}</td><td>${f(d.T0,2)}</td><td>${f(d.ext,2)}</td><td>${ok?f(x.Tx,2):"–"}</td><td>${ok?f(x.Tx-d.T0,2):"–"}</td></tr>`}
   $("sum").innerHTML=h;load(0)}
@@ -218,13 +220,13 @@ function parseUdm(xml){const doc=new DOMParser().parseFromString(xml,"applicatio
   if(!runs.length)throw new Error("No time + temperature runs were found in this file.");
   return runs}
 $("file").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;const msg=$("importMsg");
-  try{const runs=parseUdm(untarUdm(await bytesOf(file)));imported=runs;
+  try{const runs=parseUdm(untarUdm(await bytesOf(file)));imported=runs;importedName=currentFile=file.name;
     msg.innerHTML=`<small>Loaded ${esc(file.name)}: ${runs.length} run${runs.length>1?"s":""}.</small>`;$("tool").hidden=false;setRuns(runs)}
   catch(err){msg.innerHTML=`<span class="err">${esc(err.message)}</span>`}});
 function tab(which){for(const[id,w]of[["tabMig","mig"],["tabImp","imp"],["tabSheet","sheet"]])$(id).setAttribute("aria-selected",which===w);
   const sh=which==="sheet";$("sheet").hidden=!sh;$("key").hidden=sh;$("importBox").hidden=which!=="imp";
   if(sh){$("tool").hidden=true;return}
-  if(which==="mig"){$("tool").hidden=false;setRuns(MIG)}else if(imported){$("tool").hidden=false;setRuns(imported)}else $("tool").hidden=true}
+  if(which==="mig"){currentFile=null;$("tool").hidden=false;setRuns(MIG)}else if(imported){currentFile=importedName;$("tool").hidden=false;setRuns(imported)}else $("tool").hidden=true}
 $("tabMig").onclick=()=>tab("mig");$("tabImp").onclick=()=>tab("imp");$("tabSheet").onclick=()=>tab("sheet");
 // ---- report sheet ----
 const SH={A:{cols:3,rows:[["A1","Calorimeter + lid (g)","in"],["A2","Calorimeter + lid + HCl (g)","in"],["A3","HCl (g)",4],["A4","Mg (g)","in"],["A5","Mg (mol)",-4],
@@ -251,6 +253,158 @@ function calcSheet(){const solid=$("shSolid").checked;
   const C=n=>g(`C${n}_0`);const c3=C(2)-C(1),c5=C(4)/84.007,c8=C(7)-C(6),cm=c3+(solid?C(4):0),c10=cm*4.184*Math.abs(c8);
   put("C3_0",c3,4);put("C5_0",c5,-4);put("C8_0",c8,1);put("C9_0",4.184,3);put("C10_0",c10,0);put("C11_0",(c10/1000)/c5,1)}
 function fillSheet(data){document.querySelectorAll("#sheet input[type=number]").forEach(e=>e.value=data[e.id]??(e.id==="B6_0"?1.5:""));calcSheet()}
+// ---- Excel export: builds a real .xlsx (zip of XML) with formulas and charts, no libraries ----
+const XL=(()=>{
+  const crcT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+  const crc=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=crcT[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
+  function zip(files){const enc=new TextEncoder(),parts=[],cd=[];let off=0;
+    for(const[name,text]of files){const nb=enc.encode(name),db=enc.encode(text),c=crc(db);
+      const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);
+      h.setUint32(14,c,true);h.setUint32(18,db.length,true);h.setUint32(22,db.length,true);h.setUint16(26,nb.length,true);
+      parts.push(new Uint8Array(h.buffer),nb,db);
+      const d=new DataView(new ArrayBuffer(46));d.setUint32(0,0x02014b50,true);d.setUint16(4,20,true);d.setUint16(6,20,true);d.setUint16(8,0x0800,true);
+      d.setUint32(16,c,true);d.setUint32(20,db.length,true);d.setUint32(24,db.length,true);d.setUint16(28,nb.length,true);d.setUint32(42,off,true);
+      cd.push(new Uint8Array(d.buffer),nb);off+=30+nb.length+db.length}
+    const cdLen=cd.reduce((a,b)=>a+b.length,0),e=new DataView(new ArrayBuffer(22));
+    e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cdLen,true);e.setUint32(16,off,true);
+    return new Blob([...parts,...cd,new Uint8Array(e.buffer)],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})}
+  const x=v=>String(v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+  const col=n=>{let s="";n++;while(n){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=(n-m-1)/26}return s};
+  // style ids (see styles below)
+  const S={def:0,head:1,n2:2,n4:3,g2:4,title:5,g4:6,n1:7,g:8,ital:9};
+  class Sheet{constructor(name){this.name=name;this.rows=new Map();this.cols=[];this.chart=null;this.freeze=false}
+    set(c,r,v,s=0,f=null){if(!this.rows.has(r))this.rows.set(r,new Map());this.rows.get(r).set(c,{v,s,f})}
+    xml(){let o=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">`;
+      o+=`<sheetViews><sheetView workbookViewId="0">${this.freeze?'<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>':""}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/>`;
+      if(this.cols.length)o+="<cols>"+this.cols.map((w,i)=>w?`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`:"").join("")+"</cols>";
+      o+="<sheetData>";
+      for(const r of[...this.rows.keys()].sort((a,b)=>a-b)){o+=`<row r="${r}">`;const row=this.rows.get(r);
+        for(const c of[...row.keys()].sort((a,b)=>a-b)){const{v,s,f}=row.get(c),ref=col(c)+r;
+          if(f!=null)o+=`<c r="${ref}" s="${s}"${typeof v==="string"?' t="str"':""}><f>${x(f)}</f>${v===""||v==null||(typeof v==="number"&&!isFinite(v))?"":`<v>${x(v)}</v>`}</c>`;
+          else if(typeof v==="number"){if(isFinite(v))o+=`<c r="${ref}" s="${s}"><v>${v}</v></c>`}
+          else if(v!=null&&v!=="")o+=`<c r="${ref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${x(v)}</t></is></c>`}
+        o+="</row>"}
+      o+="</sheetData>"+(this.chart?'<drawing r:id="rId1"/>':"")+"</worksheet>";return o}}
+  const q=n=>"'"+n.replace(/'/g,"''")+"'";
+  function chartXml(c){const sn=q(c.sheet),rt=s=>`<c:tx><c:rich><a:bodyPr/><a:p><a:pPr><a:defRPr sz="1100" b="0"/></a:pPr><a:r><a:rPr sz="1100" b="0"/><a:t>${x(s)}</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/>`;
+    const ser=(i,name,xr,yr,clr,dash,marker)=>`<c:ser><c:idx val="${i}"/><c:order val="${i}"/><c:tx><c:v>${x(name)}</c:v></c:tx><c:spPr>${marker?'<a:ln><a:noFill/></a:ln>':`<a:ln w="${dash?15875:22225}"><a:solidFill><a:srgbClr val="${clr}"/></a:solidFill>${dash?'<a:prstDash val="dash"/>':""}</a:ln>`}</c:spPr>`+
+      (marker?`<c:marker><c:symbol val="circle"/><c:size val="8"/><c:spPr><a:noFill/><a:ln w="25400"><a:solidFill><a:srgbClr val="${clr}"/></a:solidFill></a:ln></c:spPr></c:marker>`:'<c:marker><c:symbol val="none"/></c:marker>')+
+      `<c:xVal><c:numRef><c:f>${sn}!${xr}</c:f></c:numRef></c:xVal><c:yVal><c:numRef><c:f>${sn}!${yr}</c:f></c:numRef></c:yVal><c:smooth val="0"/></c:ser>`;
+    const ax=(id,cross,pos,title,mn,mx,del)=>`<c:valAx><c:axId val="${id}"/><c:scaling><c:orientation val="minMax"/><c:max val="${mx}"/><c:min val="${mn}"/></c:scaling><c:delete val="0"/><c:axPos val="${pos}"/>`+
+      (pos==="l"?'<c:majorGridlines><c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="E0E0E0"/></a:solidFill></a:ln></c:spPr></c:majorGridlines>':"")+
+      `<c:title>${rt(title)}</c:title><c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="out"/><c:minorTickMark val="none"/><c:tickLblPos val="low"/><c:crossAx val="${cross}"/><c:crosses val="autoZero"/><c:crossBetween val="midCat"/></c:valAx>`;
+    const n=c.last;
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><c:roundedCorners val="0"/><c:chart><c:title>${rt(c.title).replace('sz="1100" b="0"/></a:pPr><a:r><a:rPr sz="1100" b="0"/>','sz="1300" b="1"/></a:pPr><a:r><a:rPr sz="1300" b="1"/>')}</c:title><c:autoTitleDeleted val="0"/><c:plotArea><c:layout/><c:scatterChart><c:scatterStyle val="lineMarker"/><c:varyColors val="0"/>`+
+      ser(0,"Measured temperature",`$A$2:$A$${n}`,`$B$2:$B$${n}`,"7F7F7F",false)+
+      ser(1,"Rise line",`$A$2:$A$${n}`,`$C$2:$C$${n}`,"1A5FB4",true)+
+      ser(2,"Plateau line",`$A$2:$A$${n}`,`$D$2:$D$${n}`,"C64600",true)+
+      ser(3,"Where they cross (final T)","$G$13","$G$14","C01C28",false,true)+
+      `<c:axId val="10"/><c:axId val="20"/></c:scatterChart>`+ax(10,20,"b","Time (s)",0,c.tmax,0)+ax(20,10,"l","Temperature (°C)",c.ymin,c.ymax,0)+
+      `</c:plotArea><c:legend><c:legendPos val="b"/><c:overlay val="0"/></c:legend><c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart></c:chartSpace>`}
+  const drawingXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><xdr:twoCellAnchor><xdr:from><xdr:col>5</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>18</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:to><xdr:col>15</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>42</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to><xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="Chart 1"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="rId1"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>`;
+  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<numFmts count="2"><numFmt numFmtId="164" formatCode="0.0000"/><numFmt numFmtId="165" formatCode="0.0"/></numFmts>
+<fonts count="4"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="14"/><name val="Calibri"/></font><font><i/><sz val="10"/><color rgb="FF666666"/><name val="Calibri"/></font></fonts>
+<fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE7E6E6"/><bgColor indexed="64"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="FFDDEBF7"/><bgColor indexed="64"/></patternFill></fill></fills>
+<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right/><top/><bottom style="thin"><color rgb="FF999999"/></bottom><diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="10"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="1" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>
+<xf numFmtId="2" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="2" fontId="0" fillId="2" borderId="0" xfId="0" applyNumberFormat="1" applyFill="1"/>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+<xf numFmtId="164" fontId="0" fillId="2" borderId="0" xfId="0" applyNumberFormat="1" applyFill="1"/>
+<xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="0" fontId="0" fillId="2" borderId="0" xfId="0" applyFill="1"/>
+<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  function sheetName(name,used){let s=name.replace(/[\[\]:*?\/\\]/g," ").trim().slice(0,31)||"Run";let b=s,i=2;while(used.has(s.toLowerCase())){const suf=` (${i++})`;s=b.slice(0,31-suf.length)+suf}used.add(s.toLowerCase());return s}
+
+  function build(runs,selFor,report){
+    const used=new Set(["summary","report sheet"]),sheets=[],summary=new Sheet("Summary");sheets.push(summary);
+    summary.cols=[24,13,13,13,16,16,14];
+    summary.set(0,1,"Calorimetry: final temperature by line intersection",S.title);
+    summary.set(0,2,"Each run sheet fits a line to the rise and to the plateau with SLOPE/INTERCEPT, then solves for where they cross. Edit the fit ranges there and everything updates.",S.ital);
+    ["Run","Initial T (°C)","Final T (°C)","ΔT (°C)","Raw max/min (°C)","Crossing time (s)","Points used"].forEach((h,i)=>summary.set(i,4,h,S.head));
+    runs.forEach((r,ri)=>{const sn=sheetName(r.name,used),sh=new Sheet(sn);sh.freeze=true;sh.cols=[10,16,14,14,3,24,14];
+      const d=defaults(r),s=selFor(r)||d,res=solve(r,s),n=r.t.length,last=n+1;
+      ["Time (s)","Temperature (°C)","Rise line (°C)","Plateau line (°C)"].forEach((h,i)=>sh.set(i,1,h,S.head));
+      let ra=null,rb=null,pa=null,pb=null,k=Math.max(1,r.t.findIndex((_,i)=>Math.abs(r.T[i]-r.T[0])>0.3));
+      for(let i=0;i<n;i++){const t=r.t[i],row=i+2;sh.set(0,row,t,S.n1);sh.set(1,row,r.T[i],S.n2);
+        if(t>=s.r0&&t<=s.r1){ra??=row;rb=row}if(t>=s.p0&&t<=s.p1){pa??=row;pb=row}}
+      const tx=res.tx,lo=Math.min(s.r0,tx??s.r0)-10,hiR=Math.max(s.r1,tx??s.r1)+15,loP=Math.min(s.p0,tx??s.p0)-15;
+      for(let i=0;i<n;i++){const t=r.t[i],row=i+2;
+        if(res.A&&t>=lo&&t<=hiR)sh.set(2,row,res.A.m*t+res.A.b,S.n2,`$G$8*A${row}+$G$9`);
+        if(res.P&&t>=loP)sh.set(3,row,res.P.m*t+res.P.b,S.n2,`$G$10*A${row}+$G$11`)}
+      const info=[[1,"Run",r.name,0],[3,"Rise fit from (s), for reference",s.r0,S.n1],[4,"Rise fit to (s)",s.r1,S.n1],[5,"Plateau fit from (s)",s.p0,S.n1],[6,"Plateau fit to (s)",s.p1,S.n1]];
+      for(const[row,l,v,st]of info){sh.set(5,row,l,S.head);sh.set(6,row,v,st)}
+      sh.set(5,7,"Change the fit by editing the row ranges in G8:G11",S.ital);
+      const RR=ra&&rb?`B${ra}:B${rb},A${ra}:A${rb}`:"B2:B3,A2:A3",PP=pa&&pb?`B${pa}:B${pb},A${pa}:A${pb}`:"B2:B3,A2:A3";
+      const calc=[[8,"Rise slope m1 (°C/s)",res.A?.m,`SLOPE(${RR})`,S.g4],[9,"Rise intercept b1 (°C)",res.A?.b,`INTERCEPT(${RR})`,S.g4],
+        [10,"Plateau slope m2 (°C/s)",res.P?.m,`SLOPE(${PP})`,S.g4],[11,"Plateau intercept b2 (°C)",res.P?.b,`INTERCEPT(${PP})`,S.g4],
+        [13,"Crossing time t (s)",tx,"(G11-G9)/(G8-G10)",S.g2],[14,"Final T (°C)",res.Tx,"G8*G13+G9",S.g2],
+        [15,"Initial T (°C)",d.T0,`AVERAGE(B2:B${k+1})`,S.g2],[16,"ΔT (°C)",(res.Tx??NaN)-d.T0,"G14-G15",S.g2]];
+      for(const[row,l,v,fm,st]of calc){sh.set(5,row,l,S.head);sh.set(6,row,v??NaN,st,fm)}
+      sh.set(5,17,"t = (b2 − b1) / (m1 − m2), then T = m1·t + b1",S.ital);
+      const all=r.T.concat(res.Tx!=null?[res.Tx]:[]);
+      sh.chart={sheet:sn,last,title:r.name,tmax:Math.ceil(r.t[n-1]/50)*50,ymin:Math.floor(Math.min(...all)-1),ymax:Math.ceil(Math.max(...all)+1)};
+      sheets.push(sh);
+      const row=5+ri,R=q(sn);
+      summary.set(0,row,r.name);summary.set(1,row,d.T0,S.n2,`${R}!G15`);summary.set(2,row,res.Tx??NaN,S.n2,`${R}!G14`);
+      summary.set(3,row,(res.Tx??NaN)-d.T0,S.n2,`${R}!G16`);summary.set(4,row,d.ext,S.n2,d.ext>d.T0?`MAX(${R}!B2:B${last})`:`MIN(${R}!B2:B${last})`);
+      summary.set(5,row,tx??NaN,S.n1,`${R}!G13`);summary.set(6,row,n)});
+    if(report){const rs=new Sheet("Report Sheet");rs.cols=[6,30,13,13,13];sheets.push(rs);
+      rs.set(0,1,"Calorimetry Report Sheet",S.title);rs.set(0,2,"White cells are measured. Gray cells are Excel formulas; change a white cell and they update.",S.ital);
+      let row=4;
+      for(const[k,title]of[["A","Reaction 1: Mg + HCl"],["B","Reaction 2: NaOH + HCl"],["C","Reaction 3: NaHCO₃ + HCl"]]){
+        const{cols,rows}=SH[k];rs.set(0,row,title,S.head);rs.set(1,row,"",S.head);
+        for(let c=0;c<cols;c++)rs.set(2+c,row,cols>1?`Trial ${c+1}`:"Value",S.head);row++;
+        const where={};rows.forEach((rw,i)=>where[rw[0]]=row+i);
+        for(const[id,lbl,kind]of rows){rs.set(0,row,id);rs.set(1,row,lbl);
+          for(let c=0;c<cols;c++){const cl=col(2+c),ref=n=>cl+where[n];
+            if(kind==="in"){const v=parseFloat(report[`${id}_${c}`]);if(isFinite(v))rs.set(2+c,row,v)}
+            else{const fm=report.formula(id,ref),v=parseFloat(report[`${id}_${c}`]),st=id.endsWith("5")||id==="B7"?S.g4:S.g2;if(/^[\d.]+$/.test(fm))rs.set(2+c,row,+fm,S.g);else rs.set(2+c,row,isFinite(v)?v:NaN,st,fm)}}
+          row++}
+        row++}
+      rs.set(0,row,"Molar masses: Mg 24.305 g/mol, NaHCO₃ 84.007 g/mol. B7 treats grams of HCl solution as mL (about 1.00 g/mL).",S.ital)}
+    // package
+    const files=[],ct=[],wbRels=[],wbSheets=[];let chartN=0;
+    sheets.forEach((sh,i)=>{const n=i+1;files.push([`xl/worksheets/sheet${n}.xml`,sh.xml()]);
+      ct.push(`<Override PartName="/xl/worksheets/sheet${n}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`);
+      wbRels.push(`<Relationship Id="rId${n}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${n}.xml"/>`);
+      wbSheets.push(`<sheet name="${x(sh.name)}" sheetId="${n}" r:id="rId${n}"/>`);
+      if(sh.chart){const cn=++chartN;
+        files.push([`xl/worksheets/_rels/sheet${n}.xml.rels`,`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing${cn}.xml"/></Relationships>`]);
+        files.push([`xl/drawings/drawing${cn}.xml`,drawingXml]);
+        files.push([`xl/drawings/_rels/drawing${cn}.xml.rels`,`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/chart" Target="../charts/chart${cn}.xml"/></Relationships>`]);
+        files.push([`xl/charts/chart${cn}.xml`,chartXml(sh.chart)]);
+        ct.push(`<Override PartName="/xl/drawings/drawing${cn}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/><Override PartName="/xl/charts/chart${cn}.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>`)}});
+    const sn=sheets.length;
+    wbRels.push(`<Relationship Id="rId${sn+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>`);
+    files.push(["[Content_Types].xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${ct.join("")}</Types>`]);
+    files.push(["_rels/.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`]);
+    files.push(["xl/workbook.xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets>${wbSheets.join("")}</sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`]);
+    files.push(["xl/_rels/workbook.xml.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${wbRels.join("")}</Relationships>`]);
+    files.push(["xl/styles.xml",styles]);
+    return zip(files)}
+  return{build}})();
+const REPORT_F={A3:"{A2}-{A1}",A5:"{A4}/24.305",A8:"{A7}-{A6}",A9:"4.184",A10:"{A3}*{A9}*{A8}",A10s:"({A3}+{A4})*{A9}*{A8}",A11:"-({A10}/1000)/{A5}",
+  B4:"{B3}-{B1}",B5:"{B3}-{B2}",B7:"{B5}*{B6}/1000",B10:"{B9}-{B8}",B11:"4.184",B12:"{B4}*{B11}*{B10}",B13:"-({B12}/1000)/{B7}",
+  C3:"{C2}-{C1}",C5:"{C4}/84.007",C8:"{C7}-{C6}",C9:"4.184",C10:"{C3}*{C9}*ABS({C8})",C10s:"({C3}+{C4})*{C9}*ABS({C8})",C11:"({C10}/1000)/{C5}"};
+function exportExcel(){const msg=$("xlMsg");
+  try{const rep={};document.querySelectorAll("#sheet input[type=number]").forEach(e=>rep[e.id]=e.value);
+    document.querySelectorAll("#sheet td.c").forEach(e=>rep[e.id]=e.textContent);
+    const solid=$("shSolid").checked;
+    rep.formula=(id,ref)=>{const t=REPORT_F[solid&&REPORT_F[id+"s"]?id+"s":id];return t.replace(/\{([ABC]\d+)\}/g,(_,n)=>ref(n))};
+    const blob=XL.build(RUNS,r=>selMap[r.name],rep);
+    const name=(currentFile||"mig").replace(/\.gambl$/i,"").replace(/[^\w.-]+/g,"_")+"-calorimetry.xlsx";
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);
+    msg.textContent=`Built ${name}. If no download started, this viewer blocks downloads; open the GitHub Pages link instead.`;window.__lastXlsx=blob}
+  catch(err){msg.textContent="Couldn't build the workbook: "+err.message}}
+
+$("xlBtn").onclick=exportExcel;
 buildSheet();fillSheet(MIGSHEET);
 $("shMig").onclick=()=>fillSheet(MIGSHEET);$("shClear").onclick=()=>fillSheet({});$("shSolid").onchange=calcSheet;
 setRuns(MIG);
