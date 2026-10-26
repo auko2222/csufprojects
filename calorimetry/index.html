@@ -41,6 +41,11 @@ small{color:var(--muted)}
 #sheet h2{font-size:14px;margin:18px 0 6px}
 #sheet .id{color:var(--muted);text-align:left;padding-right:4px}
 #sheet .lbl{text-align:left}
+#word h2{font-size:14px;margin:20px 0 6px}
+#word textarea{display:block;width:100%;box-sizing:border-box;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--rule);padding:4px 6px;margin:4px 0 8px}
+#word canvas{display:block;width:100%;height:auto;border:1px solid var(--rule);margin:6px 0 2px}
+#word .wt{flex:1;min-width:12em}
+#word .wg{margin-bottom:20px}
 </style>
 <main>
 <h1>mig calorimetry</h1>
@@ -48,6 +53,7 @@ small{color:var(--muted)}
   <button id="tabMig" role="tab" type="button" aria-selected="true">mig version</button>
   <button id="tabImp" role="tab" type="button" aria-selected="false">Import .gambl</button>
   <button id="tabSheet" role="tab" type="button" aria-selected="false">Report sheet</button>
+  <button id="tabWord" role="tab" type="button" aria-selected="false">Word report</button>
 </div>
 <div class="row"><button type="button" id="xlBtn">Download Excel workbook</button><small id="xlMsg"></small></div>
 <div id="importBox" hidden>
@@ -85,6 +91,17 @@ Final T
 initial T  average of the steady readings before mixing
 raw max    highest reading in the run (lowest for NaHCO3)
 ΔT         final T − initial T</pre>
+<div id="word" hidden>
+<p><small>Type your own text. "Download Word file" makes a .docx in the report order: cover page with your conclusion, then the graphs two per page with your caption under each, then discussion and post-lab answers. Pages use 0.5" margins. Empty boxes are left out. What you type stays saved in this browser.</small></p>
+<div class="row"><button type="button" id="wdBtn">Download Word file</button><small id="wdMsg"></small></div>
+<h2>Cover page</h2>
+<label for="wdCover">One line each: title, name, class, date, partners</label><textarea id="wdCover" rows="5"></textarea>
+<label for="wdConc">Conclusion</label> <small id="wdDH"></small><textarea id="wdConc" rows="5"></textarea>
+<h2>Results: graphs</h2><small id="wdSrc"></small><div id="wdGraphs"></div>
+<h2>Discussion</h2><textarea id="wdDisc" rows="10" aria-label="Discussion"></textarea>
+<h2>Post-lab questions</h2><textarea id="wdPost" rows="10" aria-label="Post-lab questions"></textarea>
+<small>The report sheet and notebook pages go after this, the same way as before.</small>
+</div>
 <div id="sheet" hidden>
 <p><small>Type the white boxes; the gray boxes fill in. Temperatures come from the graph tabs (final T = plateau line at the mixing time).</small></p>
 <div class="row"><button type="button" id="shMig">Autofill from preset data</button><button type="button" id="shClear">Clear</button>
@@ -227,11 +244,11 @@ $("file").addEventListener("change",async e=>{const file=e.target.files[0];if(!f
   try{const runs=parseUdm(untarUdm(await bytesOf(file)));imported=runs;runs.meta.file=file.name;importedName=currentFile=file.name;
     msg.innerHTML=`<small>Loaded ${esc(file.name)}: ${runs.length} run${runs.length>1?"s":""}.</small>`;$("tool").hidden=false;setRuns(runs)}
   catch(err){msg.innerHTML=`<span class="err">${esc(err.message)}</span>`}});
-function tab(which){for(const[id,w]of[["tabMig","mig"],["tabImp","imp"],["tabSheet","sheet"]])$(id).setAttribute("aria-selected",which===w);
-  const sh=which==="sheet";$("sheet").hidden=!sh;$("key").hidden=sh;$("importBox").hidden=which!=="imp";
-  if(sh){$("tool").hidden=true;return}
+function tab(which){for(const[id,w]of[["tabMig","mig"],["tabImp","imp"],["tabSheet","sheet"],["tabWord","word"]])$(id).setAttribute("aria-selected",which===w);
+  const sh=which==="sheet",wd=which==="word";$("sheet").hidden=!sh;$("word").hidden=!wd;$("key").hidden=sh||wd;$("importBox").hidden=which!=="imp";
+  if(sh||wd){$("tool").hidden=true;if(wd)buildWord();return}
   if(which==="mig"){currentFile=null;$("tool").hidden=false;setRuns(MIG)}else if(imported){currentFile=importedName;$("tool").hidden=false;setRuns(imported)}else $("tool").hidden=true}
-$("tabMig").onclick=()=>tab("mig");$("tabImp").onclick=()=>tab("imp");$("tabSheet").onclick=()=>tab("sheet");
+$("tabMig").onclick=()=>tab("mig");$("tabImp").onclick=()=>tab("imp");$("tabSheet").onclick=()=>tab("sheet");$("tabWord").onclick=()=>tab("word");
 // ---- report sheet ----
 const SH={A:{cols:3,rows:[["A1","Calorimeter + lid (g)","in"],["A2","Calorimeter + lid + HCl (g)","in"],["A3","HCl (g)",4],["A4","Mg (g)","in"],["A5","Mg (mol)",-4],
     ["A6","Temperature, initial (°C)","in"],["A7","Temperature, final (°C)","in"],["A8","Temperature change (°C)",1],["A9","Specific heat (J/g °C)",3],["A10","Heat gained (J)",0],["A11","ΔHrxn (kJ/mol)",1]]},
@@ -261,8 +278,8 @@ function fillSheet(data){document.querySelectorAll("#sheet input[type=number]").
 const XL=(()=>{
   const crcT=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
   const crc=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=crcT[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
-  function zip(files){const enc=new TextEncoder(),parts=[],cd=[];let off=0;
-    for(const[name,text]of files){const nb=enc.encode(name),db=enc.encode(text),c=crc(db);
+  function zip(files,type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"){const enc=new TextEncoder(),parts=[],cd=[];let off=0;
+    for(const[name,text]of files){const nb=enc.encode(name),db=typeof text==="string"?enc.encode(text):text,c=crc(db);
       const h=new DataView(new ArrayBuffer(30));h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);
       h.setUint32(14,c,true);h.setUint32(18,db.length,true);h.setUint32(22,db.length,true);h.setUint16(26,nb.length,true);
       parts.push(new Uint8Array(h.buffer),nb,db);
@@ -271,7 +288,7 @@ const XL=(()=>{
       cd.push(new Uint8Array(d.buffer),nb);off+=30+nb.length+db.length}
     const cdLen=cd.reduce((a,b)=>a+b.length,0),e=new DataView(new ArrayBuffer(22));
     e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cdLen,true);e.setUint32(16,off,true);
-    return new Blob([...parts,...cd,new Uint8Array(e.buffer)],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"})}
+    return new Blob([...parts,...cd,new Uint8Array(e.buffer)],{type})}
   const x=v=>String(v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
   const col=n=>{let s="";n++;while(n){const m=(n-1)%26;s=String.fromCharCode(65+m)+s;n=(n-m-1)/26}return s};
   // style ids (see styles below)
@@ -322,22 +339,7 @@ const XL=(()=>{
 <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
   function sheetName(name,used){let s=name.replace(/[\[\]:*?\/\\]/g," ").trim().slice(0,31)||"Run";let b=s,i=2;while(used.has(s.toLowerCase())){const suf=` (${i++})`;s=b.slice(0,31-suf.length)+suf}used.add(s.toLowerCase());return s}
 
-  let kindCount={};
-  function caption(r,ri,d,res,rep){if(res.Tx==null)return null;
-    const nm=r.name,k=/nahco/i.test(nm)?"C":/naoh/i.test(nm)?"B":/\bmg\b|mg\s*\+|\+\s*mg/i.test(nm)?"A":null,trial=k?(kindCount[k]=(kindCount[k]??-1)+1):0;
-    const g=id=>{const v=parseFloat(rep?.[id]);return isFinite(v)?v:NaN},q2=t=>t.replace(/"/g,'""');
-    const T=(ref,d)=>`"&TEXT(${ref},"${d}")&"`,Tv=(v,dd)=>v.toFixed(dd);
-    let pre=`Graph ${ri+1}: ${nm}. `,mid="";
-    if(k==="A"&&trial<3&&isFinite(g(`A4_${trial}`))&&isFinite(g(`A3_${trial}`)))mid=`${g(`A4_${trial}`)} g of Mg was added to ${g(`A3_${trial}`).toFixed(2)} g of HCl in a coffee cup calorimeter. `;
-    if(k==="B"&&isFinite(g("B5_0"))&&isFinite(g("B2_0"))&&isFinite(g("B1_0")))mid=`${(g("B2_0")-g("B1_0")).toFixed(2)} g of NaOH solution was mixed with ${g("B5_0").toFixed(2)} g of ${isFinite(g("B6_0"))?g("B6_0")+" M ":""}HCl in a coffee cup calorimeter. `;
-    if(k==="C"&&isFinite(g("C4_0"))&&isFinite(g("C3_0")))mid=`${g("C4_0")} g of NaHCO3 was added to ${g("C3_0").toFixed(2)} g of HCl in a coffee cup calorimeter. `;
-    const dir=res.Tx>=d.T0?"rose":"fell",slope=res.Tx>=d.T0?"cooling":"warming";
-    const dh=k==="A"&&trial<3?g(`A11_${trial}`):k==="B"?g("B13_0"):k==="C"?g("C11_0"):NaN;
-    const dhs=k==="A"&&trial<3?rep?.[`A11_${trial}`]:k==="B"?rep?.B13_0:k==="C"?rep?.C11_0:"",end=isFinite(dh)?` ΔHrxn = ${dhs} kJ/mol.`:"";
-    const f=`="${q2(pre+mid)}Starting at Ti = ${T("G15","0.0")} °C, the temperature ${dir} to a final temperature Tf = ${T("G14","0.0")} °C. The horizontal line marks Ti, the vertical line marks the mixing time (${T("G13","0.0")} s), and the sloped line is the ${q2(slope)} trend after the reaction, extended back; Tf is where the sloped and vertical lines cross. ΔT = ${T("G16","0.0")} °C.${q2(end)}"`;
-    const v=`${pre+mid}Starting at Ti = ${Tv(d.T0,1)} °C, the temperature ${dir} to a final temperature Tf = ${Tv(res.Tx,1)} °C. The horizontal line marks Ti, the vertical line marks the mixing time (${Tv(res.tx,1)} s), and the sloped line is the ${slope} trend after the reaction, extended back; Tf is where the sloped and vertical lines cross. ΔT = ${Tv(res.Tx-d.T0,1)} °C.${end}`;
-    return{f:f.slice(1),v}}
-  function build(runs,selFor,report){kindCount={};
+  function build(runs,selFor,report){
     const meta=runs.meta||{},used=new Set(["summary","report sheet","data"]),sheets=[];
     const PAL=["1F77B4","FF7F0E","2CA02C","D62728","9467BD","8C564B"],clr=(r,i)=>r.color||PAL[i%PAL.length];
     const data=new Sheet("Data");data.freeze=true;data.fit=true;sheets.push(data);let maxN=0;
@@ -378,7 +380,6 @@ const XL=(()=>{
         series:[{name:"Temperature",x:`$A$2:$A$${last}`,y:`$B$2:$B$${last}`,color:clr(r,ri)},{name:"Mixing time",x:"$I$3:$I$4",y:"$J$3:$J$4",color:"404040",dash:true},
           {name:"Plateau line",x:`$A$2:$A$${last}`,y:`$D$2:$D$${last}`,color:"404040",dash:true},{name:"Ti",x:"$K$3:$K$4",y:"$L$3:$L$4",color:"808080",dash:true,label:{idx:1,pos:"t"}},
           {name:"Tf",x:"$G$13",y:"$G$14",color:"000000",marker:true,label:{idx:0,pos:"r"}}]};
-      {const c=caption(r,ri,d,res,report);if(c)sh.set(5,44,c.v,0,c.f)}
       sh.set(8,2,"Vertical line t (s)",S.head);sh.set(9,2,"T (°C)",S.head);sh.set(8,3,s.tm,S.n1,"$G$3");sh.set(8,4,s.tm,S.n1,"$G$3");sh.set(9,3,sh.chart.ymin);sh.set(9,4,sh.chart.ymax);sh.cols[8]=18;sh.cols[9]=10;sh.set(10,2,"Ti line t (s)",S.head);sh.set(11,2,"T (°C)",S.head);sh.set(10,3,0);sh.set(10,4,sh.chart.xmax);sh.set(11,3,d.T0,S.n2,"$G$15");sh.set(11,4,d.T0,S.n2,"$G$15");sh.cols[10]=14;sh.cols[11]=10;
       sheets.push(sh);
       const row=4+ri,R=q(sn);
@@ -422,7 +423,7 @@ const XL=(()=>{
     files.push(["xl/_rels/workbook.xml.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${wbRels.join("")}</Relationships>`]);
     files.push(["xl/styles.xml",styles]);
     return zip(files)}
-  return{build}})();
+  return{build,zip}})();
 const REPORT_F={A3:"{A2}-{A1}",A5:"{A4}/24.305",A8:"{A7}-{A6}",A9:"4.184",A10:"{A3}*{A9}*{A8}",A10s:"({A3}+{A4})*{A9}*{A8}",A11:"-({A10}/1000)/{A5}",
   B4:"{B3}-{B1}",B5:"{B3}-{B2}",B7:"{B5}*{B6}/1000",B10:"{B9}-{B8}",B11:"4.184",B12:"{B4}*{B11}*{B10}",B13:"-({B12}/1000)/{B7}",
   C3:"{C2}-{C1}",C5:"{C4}/84.007",C8:"{C7}-{C6}",C9:"4.184",C10:"{C3}*{C9}*ABS({C8})",C10s:"({C3}+{C4})*{C9}*ABS({C8})",C11:"({C10}/1000)/{C5}"};
@@ -442,6 +443,93 @@ async function exportExcel(){const msg=$("xlMsg");
   catch(err){msg.textContent="Couldn't build the workbook: "+err.message}}
 
 $("xlBtn").onclick=exportExcel;
+// ---- Word report: the user's own text plus the graphs, as a .docx (zip of XML), no libraries ----
+const wordKey=()=>"calx-word|"+(currentFile||"mig");
+let WD={};
+function loadWord(){try{WD=JSON.parse(localStorage.getItem(wordKey()))||{}}catch(e){WD={}}WD.titles??={};WD.caps??={}}
+function saveWord(){try{localStorage.setItem(wordKey(),JSON.stringify(WD))}catch(e){}}
+function runState(r){const d=defaults(r),s={...d,...(selMap[keyFor(r)]||{})};return{d,s,res:solve(r,s)}}
+// draws one report graph: title on top, 1 °C major gridlines, Ti / vertical / plateau lines, Tf marked
+function graphCanvas(r,ri,title,cv){const W=1600,H=1000,L=130,R=40,TP=95,B=200;cv.width=W;cv.height=H;
+  const c=cv.getContext("2d"),{d,s,res}=runState(r),{t,T}=r,tmax=Math.ceil(t[t.length-1]/10)*10;
+  const all=T.concat(res.Tx!=null?[res.Tx]:[]),y0=Math.floor(Math.min(...all)-1),y1=Math.ceil(Math.max(...all)+1);
+  const X=v=>L+v/tmax*(W-L-R),Y=v=>TP+(1-(v-y0)/(y1-y0))*(H-TP-B),FONT="Calibri, Carlito, Arial, sans-serif";
+  const PAL=["1F77B4","FF7F0E","2CA02C","D62728","9467BD","8C564B"],clr="#"+(r.color||PAL[ri%PAL.length]);
+  c.fillStyle="#fff";c.fillRect(0,0,W,H);c.fillStyle="#000";c.textBaseline="middle";
+  c.font=`44px ${FONT}`;c.textAlign="center";c.fillText(title,W/2,45);
+  c.lineWidth=1.5;c.strokeStyle="#d9d9d9";c.font=`26px ${FONT}`;c.fillStyle="#404040";
+  const ly=(y1-y0)>24?2:1;
+  for(let v=y0;v<=y1;v++){c.beginPath();c.moveTo(L,Y(v));c.lineTo(W-R,Y(v));c.stroke();if((v-y0)%ly===0){c.textAlign="right";c.fillText(v,L-12,Y(v))}}
+  for(let v=0;v<=tmax;v+=50){c.beginPath();c.moveTo(X(v),TP);c.lineTo(X(v),H-B);c.stroke();c.textAlign="center";c.fillText(v,X(v),H-B+28)}
+  c.strokeStyle="#808080";c.strokeRect(L,TP,W-L-R,H-TP-B);
+  c.font=`32px ${FONT}`;c.fillStyle="#000";c.textAlign="center";c.fillText("Time (s)",(L+W-R)/2,H-B+74);
+  c.save();c.translate(34,(TP+H-B)/2);c.rotate(-Math.PI/2);c.fillText("Temperature (°C)",0,0);c.restore();
+  c.save();c.beginPath();c.rect(L,TP,W-L-R,H-TP-B);c.clip();
+  const line=(pts,col,w,dash)=>{c.strokeStyle=col;c.lineWidth=w;c.setLineDash(dash||[]);c.beginPath();pts.forEach(([a,b],i)=>i?c.lineTo(X(a),Y(b)):c.moveTo(X(a),Y(b)));c.stroke();c.setLineDash([])};
+  line(t.map((v,i)=>[v,T[i]]),clr,3.5);
+  line([[0,d.T0],[tmax,d.T0]],"#808080",2.5,[14,8]);
+  if(isFinite(s.tm))line([[s.tm,y0],[s.tm,y1]],"#404040",2.5,[14,8]);
+  if(res.P)line([[s.tm,res.P.m*s.tm+res.P.b],[tmax,res.P.m*tmax+res.P.b]],"#404040",2.5,[14,8]);
+  c.restore();
+  c.font=`bold 30px ${FONT}`;c.fillStyle="#000";
+  c.textAlign="right";c.fillText(`Ti = ${f(d.T0,1)} °C`,W-R-10,Y(d.T0)+(res.Tx!=null&&res.Tx<d.T0?-20:20));
+  if(res.Tx!=null){const up=res.Tx>=d.T0;c.strokeStyle="#000";c.lineWidth=3.5;c.beginPath();c.arc(X(res.tx),Y(res.Tx),10,0,2*Math.PI);c.stroke();
+    c.textAlign="left";c.fillText(`Tf = ${f(res.Tx,1)} °C`,X(res.tx)+18,Y(res.Tx)+(up?-22:22))}
+  // legend
+  const items=[["Temperature",clr,[]],["Mixing time (vertical line)","#404040",[14,8]],["Plateau line, extended back","#404040",[14,8]],["Ti (initial T)","#808080",[14,8]]];
+  c.font=`26px ${FONT}`;c.textAlign="left";const ws=items.map(([n])=>c.measureText(n).width+70),tot=ws.reduce((a,b)=>a+b,0)+30*(items.length-1);
+  let x=(W-tot)/2;const yy=H-50;
+  items.forEach(([n,col,dash],i)=>{c.strokeStyle=col;c.lineWidth=3;c.setLineDash(dash);c.beginPath();c.moveTo(x,yy);c.lineTo(x+52,yy);c.stroke();c.setLineDash([]);c.fillStyle="#000";c.fillText(n,x+62,yy);x+=ws[i]+30});
+  return cv}
+function buildWord(){loadWord();
+  $("wdSrc").textContent=currentFile?`Graphs from ${currentFile}, using the mixing times set on the Import tab.`:"Graphs from mig's data, using the mixing times set on the mig version tab.";
+  for(const[id,k]of[["wdCover","cover"],["wdConc","conc"],["wdDisc","disc"],["wdPost","post"]]){const e=$(id);e.value=WD[k]||"";e.oninput=()=>{WD[k]=e.value;saveWord()}}
+  const v=id=>parseFloat($(id)?.textContent),a=[0,1,2].map(i=>v("A11_"+i)).filter(isFinite),sg1=x=>(x>0?"+":"−")+Math.abs(x).toFixed(1);
+  $("wdDH").textContent=a.length&&isFinite(v("B13_0"))&&isFinite(v("C11_0"))?`From the Report sheet tab: average ΔH reaction 1 = ${sg1(a.reduce((p,q)=>p+q,0)/a.length)} kJ/mol, reaction 2 = ${sg1(v("B13_0"))}, reaction 3 = ${sg1(v("C11_0"))} kJ/mol`:"";
+  const box=$("wdGraphs");box.textContent="";
+  RUNS.forEach((r,ri)=>{const n=ri+1,{d,res}=runState(r),g=document.createElement("div");g.className="wg";
+    g.innerHTML=`<div class="row"><label for="wt${ri}">Graph ${n} title</label><input type="text" class="wt" id="wt${ri}"></div><canvas></canvas>`+
+      `<small>${res.Tx!=null?`Ti ${f(d.T0,1)} °C, Tf ${f(res.Tx,1)} °C, ΔT ${f(res.Tx-d.T0,1)} °C, mixing time ${f(res.tx,1)} s`:"No final T for this run"}</small>`+
+      `<label for="wc${ri}" style="display:block;margin-top:6px">Graph ${n} caption</label><textarea id="wc${ri}" rows="4" placeholder="Say what each line shows and give Tf."></textarea>`;
+    box.appendChild(g);const ti=g.querySelector("input"),ca=g.querySelector("textarea"),cv=g.querySelector("canvas");
+    ti.value=WD.titles[r.name]??r.name;ca.value=WD.caps[r.name]||"";graphCanvas(r,ri,ti.value,cv);
+    ti.oninput=()=>{WD.titles[r.name]=ti.value;saveWord();graphCanvas(r,ri,ti.value,cv)};ca.oninput=()=>{WD.caps[r.name]=ca.value;saveWord()}})}
+const DOCX=(()=>{const x=v=>String(v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+  const run=(t,o={})=>`<w:r>${o.b||o.sz?`<w:rPr>${o.b?"<w:b/>":""}${o.sz?`<w:sz w:val="${o.sz}"/>`:""}</w:rPr>`:""}<w:t xml:space="preserve">${x(t)}</w:t></w:r>`;
+  const para=(inner,o={})=>`<w:p>${o.center||o.keep||o.after!=null?`<w:pPr>${o.keep?"<w:keepNext/>":""}${o.after!=null?`<w:spacing w:after="${o.after}"/>`:""}${o.center?'<w:jc w:val="center"/>':""}</w:pPr>`:""}${inner}</w:p>`;
+  const text=(s,o)=>s.split(/\r?\n/).map(l=>para(l?run(l,o):"",o)).join("");
+  const brk='<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+  const pic=(i,cx,cy)=>`<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${i}" name="Graph ${i}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${i}" name="graph${i}.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rImg${i}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
+  // doc = {cover, conc, graphs:[{png:Uint8Array, caption}], disc, post}
+  function build(doc){let body="";const has=s=>s&&s.trim();
+    if(has(doc.cover))body+=text(doc.cover.trim(),{center:true,sz:28,after:120});
+    if(has(doc.conc))body+=para(run("Conclusion",{b:true,sz:26}),{after:80})+text(doc.conc.trim(),{after:120});
+    const cx=6.5*914400,cy=Math.round(cx*1000/1600);
+    doc.graphs.forEach((g,i)=>{if(body&&i%2===0)body+=brk;
+      body+=para(pic(i+1,cx,cy),{center:true,keep:true,after:60})+(has(g.caption)?text(g.caption.trim(),{after:0})+para("",{after:240}):para("",{after:240}))});
+    if(has(doc.disc))body+=brk+para(run("Discussion",{b:true,sz:26}),{after:80})+text(doc.disc.trim(),{after:120});
+    if(has(doc.post))body+=(has(doc.disc)?para(""):brk)+para(run("Post-lab questions",{b:true,sz:26}),{after:80})+text(doc.post.trim(),{after:120});
+    const NS='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
+    const H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+    const files=[["[Content_Types].xml",`${H}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`],
+      ["_rels/.rels",`${H}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`],
+      ["word/_rels/document.xml.rels",`${H}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rStyles" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>${doc.graphs.map((_,i)=>`<Relationship Id="rImg${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/graph${i+1}.png"/>`).join("")}</Relationships>`],
+      ["word/styles.xml",`${H}<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri" w:eastAsia="Calibri" w:cs="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="en-US"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="0" w:line="259" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/></w:style></w:styles>`],
+      ["word/document.xml",`${H}<w:document ${NS}><w:body>${body||para("")}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr></w:body></w:document>`],
+      ...doc.graphs.map((g,i)=>[`word/media/graph${i+1}.png`,g.png])];
+    return XL.zip(files,"application/vnd.openxmlformats-officedocument.wordprocessingml.document")}
+  return{build}})();
+const pngBytes=cv=>new Promise((ok,no)=>cv.toBlob(b=>b?b.arrayBuffer().then(a=>ok(new Uint8Array(a)),no):no(new Error("couldn't draw a graph")),"image/png"));
+async function saveBlob(blob,name,msg){const dl=window.claude?.use?await window.claude.use("downloads").catch(()=>null):null;
+  if(dl){try{await dl.save({filename:name,data:blob});msg.textContent=`Saved ${name}.`}catch(e){msg.textContent=e?.code==="declined"?"Download cancelled.":"Downloads aren't available here; use the GitHub Pages link."}return}
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);msg.textContent=`Downloaded ${name}.`}
+$("wdBtn").onclick=async()=>{const msg=$("wdMsg");
+  try{const graphs=[];const cvs=[...document.querySelectorAll("#wdGraphs canvas")];
+    for(let i=0;i<RUNS.length;i++)graphs.push({png:await pngBytes(cvs[i]),caption:WD.caps[RUNS[i].name]||""});
+    const blob=DOCX.build({cover:WD.cover,conc:WD.conc,graphs,disc:WD.disc,post:WD.post});window.__lastDocx=blob;
+    await saveBlob(blob,(currentFile||"mig").replace(/\.gambl$/i,"").replace(/[^\w.-]+/g,"_")+"-calorimetry-report.docx",msg)}
+  catch(err){msg.textContent="Couldn't build the Word file: "+err.message}};
 function migSheet(){const o={...MIGSHEET};MIG.forEach((r,i)=>{const d=defaults(r),x=solve(r,{...d,...(selMap["mig|"+r.name]||{})}),key=["A?_0","A?_1","A?_2","B?_0","C?_0"][i];if(!key)return;
   const[ni,nf]=key[0]==="B"?[8,9]:[6,7];o[key.replace("?",ni)]=+d.T0.toFixed(1);if(x.Tx!=null)o[key.replace("?",nf)]=+x.Tx.toFixed(1)});return o}
 buildSheet();fillSheet(migSheet());
