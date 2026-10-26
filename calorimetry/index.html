@@ -289,13 +289,13 @@ const XL=(()=>{
       `<c:xVal><c:numRef><c:f>${sn}!${xr}</c:f></c:numRef></c:xVal><c:yVal><c:numRef><c:f>${sn}!${yr}</c:f></c:numRef></c:yVal><c:smooth val="0"/></c:ser>`;
     const ax=(id,cross,pos,title,mn,mx,del)=>`<c:valAx><c:axId val="${id}"/><c:scaling><c:orientation val="minMax"/><c:max val="${mx}"/><c:min val="${mn}"/></c:scaling><c:delete val="0"/><c:axPos val="${pos}"/>`+
       (pos==="l"?'<c:majorGridlines><c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="E0E0E0"/></a:solidFill></a:ln></c:spPr></c:majorGridlines>':"")+
-      `<c:title>${rt(title)}</c:title><c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="out"/><c:minorTickMark val="none"/><c:tickLblPos val="low"/><c:crossAx val="${cross}"/><c:crosses val="autoZero"/><c:crossBetween val="midCat"/></c:valAx>`;
+      `<c:title>${rt(title)}</c:title><c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="out"/><c:minorTickMark val="none"/><c:tickLblPos val="low"/><c:crossAx val="${cross}"/><c:crosses val="autoZero"/><c:crossBetween val="midCat"/>${pos==="l"?'<c:majorUnit val="1"/>':""}</c:valAx>`;
     const n=c.last;
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><c:roundedCorners val="0"/><c:chart><c:title>${rt(c.title).replace('sz="1100" b="0"/></a:pPr><a:r><a:rPr sz="1100" b="0"/>','sz="1300" b="1"/></a:pPr><a:r><a:rPr sz="1300" b="1"/>')}</c:title><c:autoTitleDeleted val="0"/><c:plotArea><c:layout/><c:scatterChart><c:scatterStyle val="lineMarker"/><c:varyColors val="0"/>`+
       ser(0,"Measured temperature",`$A$2:$A$${n}`,`$B$2:$B$${n}`,"7F7F7F",false)+
       ser(1,"Mixing time (vertical line)","$I$3:$I$4","$J$3:$J$4","1A5FB4",true)+
       ser(2,"Plateau line",`$A$2:$A$${n}`,`$D$2:$D$${n}`,"C64600",true)+
-      ser(3,"Final T","$G$13","$G$14","C01C28",false,true)+
+      ser(3,"Tf (final T)","$G$13","$G$14","C01C28",false,true)+ser(4,"Ti (initial T)","$K$3:$K$4","$L$3:$L$4","2E7D32",true)+
       `<c:axId val="10"/><c:axId val="20"/></c:scatterChart>`+ax(10,20,"b","Time (s)",0,c.tmax,0)+ax(20,10,"l","Temperature (°C)",c.ymin,c.ymax,0)+
       `</c:plotArea><c:legend><c:legendPos val="b"/><c:overlay val="0"/></c:legend><c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart></c:chartSpace>`}
   const drawingXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><xdr:twoCellAnchor><xdr:from><xdr:col>5</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>18</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:to><xdr:col>15</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>42</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to><xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="Chart 1"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="rId1"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>`;
@@ -345,7 +345,7 @@ const XL=(()=>{
       sh.set(5,17,"Final T = plateau line at the mixing time: T = m2·t + b2",S.ital);
       const all=r.T.concat(res.Tx!=null?[res.Tx]:[]);
       sh.chart={sheet:sn,last,title:r.name,tmax:Math.ceil(r.t[n-1]/50)*50,ymin:Math.floor(Math.min(...all)-1),ymax:Math.ceil(Math.max(...all)+1)};
-      sh.set(8,2,"Vertical line t (s)",S.head);sh.set(9,2,"T (°C)",S.head);sh.set(8,3,s.tm,S.n1,"$G$3");sh.set(8,4,s.tm,S.n1,"$G$3");sh.set(9,3,sh.chart.ymin);sh.set(9,4,sh.chart.ymax);sh.cols[8]=18;sh.cols[9]=10;
+      sh.set(8,2,"Vertical line t (s)",S.head);sh.set(9,2,"T (°C)",S.head);sh.set(8,3,s.tm,S.n1,"$G$3");sh.set(8,4,s.tm,S.n1,"$G$3");sh.set(9,3,sh.chart.ymin);sh.set(9,4,sh.chart.ymax);sh.cols[8]=18;sh.cols[9]=10;sh.set(10,2,"Ti line t (s)",S.head);sh.set(11,2,"T (°C)",S.head);sh.set(10,3,0);sh.set(10,4,sh.chart.tmax);sh.set(11,3,d.T0,S.n2,"$G$15");sh.set(11,4,d.T0,S.n2,"$G$15");sh.cols[10]=14;sh.cols[11]=10;
       sheets.push(sh);
       const row=5+ri,R=q(sn);
       summary.set(0,row,r.name);summary.set(1,row,d.T0,S.n2,`${R}!G15`);summary.set(2,row,res.Tx??NaN,S.n2,`${R}!G14`);
