@@ -279,7 +279,7 @@ const XL=(()=>{
   class Sheet{constructor(name){this.name=name;this.rows=new Map();this.cols=[];this.chart=null;this.freeze=false}
     set(c,r,v,s=0,f=null){if(!this.rows.has(r))this.rows.set(r,new Map());this.rows.get(r).set(c,{v,s,f})}
     xml(){let o=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">`;
-      o+=`<sheetViews><sheetView workbookViewId="0">${this.freeze?'<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>':""}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/>`;
+      if(this.fit)o+='<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>';o+=`<sheetViews><sheetView workbookViewId="0">${this.freeze?'<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>':""}</sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/>`;
       if(this.cols.length)o+="<cols>"+this.cols.map((w,i)=>w?`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`:"").join("")+"</cols>";
       o+="<sheetData>";
       for(const r of[...this.rows.keys()].sort((a,b)=>a-b)){o+=`<row r="${r}">`;const row=this.rows.get(r);
@@ -288,17 +288,18 @@ const XL=(()=>{
           else if(typeof v==="number"){if(isFinite(v))o+=`<c r="${ref}" s="${s}"><v>${v}</v></c>`}
           else if(v!=null&&v!=="")o+=`<c r="${ref}" s="${s}" t="inlineStr"><is><t xml:space="preserve">${x(v)}</t></is></c>`}
         o+="</row>"}
-      o+="</sheetData>"+(this.chart?'<drawing r:id="rId1"/>':"")+"</worksheet>";return o}}
+      o+="</sheetData>"+(this.fit?'<pageMargins left="0.5" right="0.5" top="0.5" bottom="0.5" header="0.3" footer="0.3"/><pageSetup orientation="landscape" fitToWidth="1" fitToHeight="0"/>':"")+(this.chart?'<drawing r:id="rId1"/>':"")+"</worksheet>";return o}}
   const q=n=>"'"+n.replace(/'/g,"''")+"'";
   function chartXml(c){const sn=q(c.sheet),rt=s=>`<c:tx><c:rich><a:bodyPr/><a:p><a:pPr><a:defRPr sz="1100" b="0"/></a:pPr><a:r><a:rPr sz="1100" b="0"/><a:t>${x(s)}</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/>`;
-    const ser=(i,name,xr,yr,clr,dash,marker)=>`<c:ser><c:idx val="${i}"/><c:order val="${i}"/><c:tx><c:v>${x(name)}</c:v></c:tx><c:spPr>${marker?'<a:ln><a:noFill/></a:ln>':`<a:ln w="${dash?15875:22225}"><a:solidFill><a:srgbClr val="${clr}"/></a:solidFill>${dash?'<a:prstDash val="dash"/>':""}</a:ln>`}</c:spPr>`+
-      (marker?`<c:marker><c:symbol val="circle"/><c:size val="8"/><c:spPr><a:noFill/><a:ln w="25400"><a:solidFill><a:srgbClr val="${clr}"/></a:solidFill></a:ln></c:spPr></c:marker>`:'<c:marker><c:symbol val="none"/></c:marker>')+
+    const lbl=(L)=>{if(!L)return"";const f='<c:showLegendKey val="0"/><c:showVal val="0"/><c:showCatName val="0"/>',e='<c:showPercent val="0"/><c:showBubbleSize val="0"/>';return `<c:dLbls><c:dLbl><c:idx val="${L.idx}"/><c:txPr><a:bodyPr/><a:lstStyle/><a:p><a:pPr><a:defRPr sz="1100" b="1"/></a:pPr><a:endParaRPr lang="en-US"/></a:p></c:txPr><c:dLblPos val="${L.pos}"/>${f}<c:showSerName val="1"/>${e}</c:dLbl>${f}<c:showSerName val="0"/>${e}</c:dLbls>`};
+    const ser=(i,name,xr,yr,clr,dash,marker,L)=>`<c:ser><c:idx val="${i}"/><c:order val="${i}"/><c:tx><c:v>${x(name)}</c:v></c:tx><c:spPr>${marker?'<a:ln><a:noFill/></a:ln>':`<a:ln w="${dash?15875:22225}"><a:solidFill><a:srgbClr val="${clr}"/></a:solidFill>${dash?'<a:prstDash val="dash"/>':""}</a:ln>`}</c:spPr>`+
+      (marker?`<c:marker><c:symbol val="circle"/><c:size val="8"/><c:spPr><a:noFill/><a:ln w="25400"><a:solidFill><a:srgbClr val="${clr}"/></a:solidFill></a:ln></c:spPr></c:marker>`:'<c:marker><c:symbol val="none"/></c:marker>')+lbl(L)+
       `<c:xVal><c:numRef><c:f>${sn}!${xr}</c:f></c:numRef></c:xVal><c:yVal><c:numRef><c:f>${sn}!${yr}</c:f></c:numRef></c:yVal><c:smooth val="0"/></c:ser>`;
     const ax=(id,cross,pos,title,mn,mx,unit)=>`<c:valAx><c:axId val="${id}"/><c:scaling><c:orientation val="minMax"/>${isFinite(mx)?`<c:max val="${mx}"/>`:""}${isFinite(mn)?`<c:min val="${mn}"/>`:""}</c:scaling><c:delete val="0"/><c:axPos val="${pos}"/>`+
       (pos==="l"||unit?'<c:majorGridlines><c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="E0E0E0"/></a:solidFill></a:ln></c:spPr></c:majorGridlines>':"")+
       `<c:title>${rt(title)}</c:title><c:numFmt formatCode="General" sourceLinked="0"/><c:majorTickMark val="out"/><c:minorTickMark val="none"/><c:tickLblPos val="low"/><c:crossAx val="${cross}"/><c:crosses val="autoZero"/><c:crossBetween val="midCat"/>${unit?`<c:majorUnit val="${unit}"/>`:""}</c:valAx>`;
     return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><c:roundedCorners val="0"/><c:chart><c:title>${rt(c.title)}</c:title><c:autoTitleDeleted val="0"/><c:plotArea><c:layout/><c:scatterChart><c:scatterStyle val="lineMarker"/><c:varyColors val="0"/>`+
-      c.series.map((z,i)=>ser(i,z.name,z.x,z.y,z.color,z.dash,z.marker)).join("")+
+      c.series.map((z,i)=>ser(i,z.name,z.x,z.y,z.color,z.dash,z.marker,z.label)).join("")+
       `<c:axId val="10"/><c:axId val="20"/></c:scatterChart>`+ax(10,20,"b",c.xtitle,c.xmin,c.xmax,c.xunit)+ax(20,10,"l",c.ytitle,c.ymin,c.ymax,c.yunit)+
       `</c:plotArea><c:legend><c:legendPos val="b"/><c:overlay val="0"/></c:legend><c:plotVisOnly val="1"/><c:dispBlanksAs val="gap"/></c:chart></c:chartSpace>`}
   const drawingXml=([c1,r1,c2,r2])=>`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><xdr:twoCellAnchor><xdr:from><xdr:col>${c1}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${r1}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:to><xdr:col>${c2}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>${r2}</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to><xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="Chart 1"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="rId1"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>`;
@@ -321,10 +322,25 @@ const XL=(()=>{
 <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
   function sheetName(name,used){let s=name.replace(/[\[\]:*?\/\\]/g," ").trim().slice(0,31)||"Run";let b=s,i=2;while(used.has(s.toLowerCase())){const suf=` (${i++})`;s=b.slice(0,31-suf.length)+suf}used.add(s.toLowerCase());return s}
 
-  function build(runs,selFor,report){
+  let kindCount={};
+  function caption(r,ri,d,res,rep){if(res.Tx==null)return null;
+    const nm=r.name,k=/nahco/i.test(nm)?"C":/naoh/i.test(nm)?"B":/\bmg\b|mg\s*\+|\+\s*mg/i.test(nm)?"A":null,trial=k?(kindCount[k]=(kindCount[k]??-1)+1):0;
+    const g=id=>{const v=parseFloat(rep?.[id]);return isFinite(v)?v:NaN},q2=t=>t.replace(/"/g,'""');
+    const T=(ref,d)=>`"&TEXT(${ref},"${d}")&"`,Tv=(v,dd)=>v.toFixed(dd);
+    let pre=`Graph ${ri+1}: ${nm}. `,mid="";
+    if(k==="A"&&trial<3&&isFinite(g(`A4_${trial}`))&&isFinite(g(`A3_${trial}`)))mid=`${g(`A4_${trial}`)} g of Mg was added to ${g(`A3_${trial}`).toFixed(2)} g of HCl in a coffee cup calorimeter. `;
+    if(k==="B"&&isFinite(g("B5_0"))&&isFinite(g("B2_0"))&&isFinite(g("B1_0")))mid=`${(g("B2_0")-g("B1_0")).toFixed(2)} g of NaOH solution was mixed with ${g("B5_0").toFixed(2)} g of ${isFinite(g("B6_0"))?g("B6_0")+" M ":""}HCl in a coffee cup calorimeter. `;
+    if(k==="C"&&isFinite(g("C4_0"))&&isFinite(g("C3_0")))mid=`${g("C4_0")} g of NaHCO3 was added to ${g("C3_0").toFixed(2)} g of HCl in a coffee cup calorimeter. `;
+    const dir=res.Tx>=d.T0?"rose":"fell";
+    const dh=k==="A"&&trial<3?g(`A11_${trial}`):k==="B"?g("B13_0"):k==="C"?g("C11_0"):NaN;
+    const dhs=k==="A"&&trial<3?rep?.[`A11_${trial}`]:k==="B"?rep?.B13_0:k==="C"?rep?.C11_0:"",end=isFinite(dh)?` ΔHrxn = ${dhs} kJ/mol.`:"";
+    const f=`="${q2(pre+mid)}Starting at Ti = ${T("G15","0.0")} °C, the temperature ${dir} to a final temperature Tf = ${T("G14","0.0")} °C, found by extending the cooling line back to the mixing time (${T("G13","0.0")} s). ΔT = ${T("G16","0.0")} °C.${q2(end)}"`;
+    const v=`${pre+mid}Starting at Ti = ${Tv(d.T0,1)} °C, the temperature ${dir} to a final temperature Tf = ${Tv(res.Tx,1)} °C, found by extending the cooling line back to the mixing time (${Tv(res.tx,1)} s). ΔT = ${Tv(res.Tx-d.T0,1)} °C.${end}`;
+    return{f:f.slice(1),v}}
+  function build(runs,selFor,report){kindCount={};
     const meta=runs.meta||{},used=new Set(["summary","report sheet","data"]),sheets=[];
     const PAL=["1F77B4","FF7F0E","2CA02C","D62728","9467BD","8C564B"],clr=(r,i)=>r.color||PAL[i%PAL.length];
-    const data=new Sheet("Data");data.freeze=true;sheets.push(data);let maxN=0;
+    const data=new Sheet("Data");data.freeze=true;data.fit=true;sheets.push(data);let maxN=0;
     runs.forEach((r,ri)=>{const c0=2*ri;data.cols[c0]=26;data.cols[c0+1]=30;
       data.set(c0,1,`${r.name}: ${r.tname||"Time"} (${r.tunits||"s"})`,S.head);data.set(c0+1,1,`${r.name}: ${r.yname||"Temperature"} (${r.yunits||"°C"})`,S.head);
       r.t.forEach((v,i)=>{data.set(c0,i+2,v);data.set(c0+1,i+2,r.T[i])});maxN=Math.max(maxN,r.t.length)});
@@ -338,7 +354,7 @@ const XL=(()=>{
     summary.cols=[24,13,13,13,16,16,14];
     summary.set(0,1,"Calorimetry results",S.title);
     ["Run","Initial T (°C)","Final T (°C)","ΔT (°C)","Raw max/min (°C)","Mixing time (s)","Points"].forEach((h,i)=>summary.set(i,3,h,S.head));
-    runs.forEach((r,ri)=>{const sn=sheetName(r.name,used),sh=new Sheet(sn);sh.freeze=true;sh.cols=[10,16,14,14,3,24,14];
+    runs.forEach((r,ri)=>{const sn=sheetName(r.name,used),sh=new Sheet(sn);sh.freeze=true;sh.fit=true;sh.cols=[10,16,14,14,3,32,14];
       const d=defaults(r),s=selFor(r)||d,res=solve(r,s),n=r.t.length,last=n+1;
       ["Time (s)","Temperature (°C)","","Plateau line (°C)"].forEach((h,i)=>sh.set(i,1,h,S.head));
       let ra=null,rb=null,pa=null,pb=null,k=Math.max(1,r.t.findIndex((_,i)=>Math.abs(r.T[i]-r.T[0])>0.3));
@@ -360,8 +376,9 @@ const XL=(()=>{
       const all=r.T.concat(res.Tx!=null?[res.Tx]:[]);
       sh.chart={sheet:sn,title:r.name,xtitle:"Time (s)",ytitle:"Temperature (°C)",xmin:0,xmax:Math.ceil(r.t[n-1]/50)*50,ymin:Math.floor(Math.min(...all)-1),ymax:Math.ceil(Math.max(...all)+1),yunit:1,anchor:[5,18,15,42],
         series:[{name:"Temperature",x:`$A$2:$A$${last}`,y:`$B$2:$B$${last}`,color:clr(r,ri)},{name:"Mixing time",x:"$I$3:$I$4",y:"$J$3:$J$4",color:"404040",dash:true},
-          {name:"Plateau line",x:`$A$2:$A$${last}`,y:`$D$2:$D$${last}`,color:"404040",dash:true},{name:"Ti",x:"$K$3:$K$4",y:"$L$3:$L$4",color:"808080",dash:true},
-          {name:"Tf",x:"$G$13",y:"$G$14",color:"000000",marker:true}]};
+          {name:"Plateau line",x:`$A$2:$A$${last}`,y:`$D$2:$D$${last}`,color:"404040",dash:true},{name:"Ti",x:"$K$3:$K$4",y:"$L$3:$L$4",color:"808080",dash:true,label:{idx:1,pos:"t"}},
+          {name:"Tf",x:"$G$13",y:"$G$14",color:"000000",marker:true,label:{idx:0,pos:"r"}}]};
+      {const c=caption(r,ri,d,res,report);if(c)sh.set(5,44,c.v,0,c.f)}
       sh.set(8,2,"Vertical line t (s)",S.head);sh.set(9,2,"T (°C)",S.head);sh.set(8,3,s.tm,S.n1,"$G$3");sh.set(8,4,s.tm,S.n1,"$G$3");sh.set(9,3,sh.chart.ymin);sh.set(9,4,sh.chart.ymax);sh.cols[8]=18;sh.cols[9]=10;sh.set(10,2,"Ti line t (s)",S.head);sh.set(11,2,"T (°C)",S.head);sh.set(10,3,0);sh.set(10,4,sh.chart.xmax);sh.set(11,3,d.T0,S.n2,"$G$15");sh.set(11,4,d.T0,S.n2,"$G$15");sh.cols[10]=14;sh.cols[11]=10;
       sheets.push(sh);
       const row=4+ri,R=q(sn);
