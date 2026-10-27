@@ -92,15 +92,19 @@ initial T  average of the steady readings before mixing
 raw max    highest reading in the run (lowest for NaHCO3)
 ΔT         final T − initial T</pre>
 <div id="word" hidden>
-<p><small>Type your own text. "Download Word file" makes a .docx in the report order: cover page with your conclusion, then the graphs two per page with your caption under each, then discussion and post-lab answers. Pages use 0.5" margins. Empty boxes are left out. What you type stays saved in this browser.</small></p>
+<p><small>Type your own text. "Download Word file" makes a .docx in the report order: cover page, results (graphs two per page, caption under each, 0.5" margins), discussion, post-lab questions. Empty boxes are left out. What you type stays saved in this browser.</small></p>
 <div class="row"><button type="button" id="wdFill">Autofill empty boxes</button><button type="button" id="wdBtn">Download Word file</button><small id="wdMsg"></small></div>
 <h2>Cover page</h2>
-<label for="wdCover">One line each: title, name, class, date, partners</label><textarea id="wdCover" rows="5"></textarea>
-<label for="wdConc">Conclusion</label> <small id="wdDH"></small><textarea id="wdConc" rows="5"></textarea>
+<label for="wdCover">Upper right corner: your name, the date, the lab section (one per line)</label><textarea id="wdCover" rows="3"></textarea>
+<label for="wdTitle">Experiment name (centered)</label><textarea id="wdTitle" rows="1"></textarea>
+<label for="wdConc">Conclusion</label> <small id="wdDH"></small><textarea id="wdConc" rows="4"></textarea>
 <h2>Results: graphs</h2><small id="wdSrc"></small><div id="wdGraphs"></div>
-<h2>Discussion</h2><textarea id="wdDisc" rows="10" aria-label="Discussion"></textarea>
-<h2>Post-lab questions</h2><textarea id="wdPost" rows="10" aria-label="Post-lab questions"></textarea>
-<small>The report sheet and notebook pages go after this, the same way as before.</small>
+<h2>Discussion</h2>
+<label for="wdD1">Paragraph 1: the type of system (open, closed or isolated) you assume, and how that influences your analysis</label><textarea id="wdD1" rows="7"></textarea>
+<label for="wdD2">Paragraph 2: the expected heat transfer in the coffee cup calorimeter, why it happens, and why the reagents are not considered in the energy balance</label><textarea id="wdD2" rows="7"></textarea>
+<label for="wdEq">Chemical equations: balanced equation for each reaction (one per line)</label><textarea id="wdEq" rows="3"></textarea>
+<h2>Post-lab questions</h2><div id="wdPost"></div>
+<small>Questions 1 and 3 also want the work shown in your lab notebook after the results section. The report sheet and notebook pages go after this.</small>
 </div>
 <div id="sheet" hidden>
 <p><small>Type the white boxes; the gray boxes fill in. Temperatures come from the graph tabs (final T = plateau line at the mixing time).</small></p>
@@ -458,8 +462,9 @@ function graphCanvas(r,ri,title,cv){const W=1600,H=1000,L=130,R=40,TP=95,B=200;c
   c.fillStyle="#fff";c.fillRect(0,0,W,H);c.fillStyle="#000";c.textBaseline="middle";
   c.font=`44px ${FONT}`;c.textAlign="center";c.fillText(title,W/2,45);
   c.lineWidth=1.5;c.strokeStyle="#d9d9d9";c.font=`26px ${FONT}`;c.fillStyle="#404040";
-  const ly=(y1-y0)>24?2:1;
-  for(let v=y0;v<=y1;v++){c.beginPath();c.moveTo(L,Y(v));c.lineTo(W-R,Y(v));c.stroke();if((v-y0)%ly===0){c.textAlign="right";c.fillText(v,L-12,Y(v))}}
+  const sp=(H-TP-B)/(y1-y0);c.font=`${Math.min(26,Math.floor(sp*0.95))}px ${FONT}`;
+  for(let v=y0;v<=y1;v++){c.beginPath();c.moveTo(L,Y(v));c.lineTo(W-R,Y(v));c.stroke();c.textAlign="right";c.fillText(v,L-12,Y(v))}
+  c.font=`26px ${FONT}`;
   for(let v=0;v<=tmax;v+=50){c.beginPath();c.moveTo(X(v),TP);c.lineTo(X(v),H-B);c.stroke();c.textAlign="center";c.fillText(v,X(v),H-B+28)}
   c.strokeStyle="#808080";c.strokeRect(L,TP,W-L-R,H-TP-B);
   c.font=`32px ${FONT}`;c.fillStyle="#000";c.textAlign="center";c.fillText("Time (s)",(L+W-R)/2,H-B+74);
@@ -481,9 +486,17 @@ function graphCanvas(r,ri,title,cv){const W=1600,H=1000,L=130,R=40,TP=95,B=200;c
   let x=(W-tot)/2;const yy=H-50;
   items.forEach(([n,col,dash],i)=>{c.strokeStyle=col;c.lineWidth=3;c.setLineDash(dash);c.beginPath();c.moveTo(x,yy);c.lineTo(x+52,yy);c.stroke();c.setLineDash([]);c.fillStyle="#000";c.fillText(n,x+62,yy);x+=ws[i]+30});
   return cv}
+const POSTQ=["Determine the theoretical enthalpy associated with each reaction to be explored in this experiment. Show all work after the results section in your lab notebook. These calculated theoretical enthalpies are considered the “true” enthalpies of reaction. Use the table from the pre-lab section of the manual.",
+  "How do you expect the calculated values to differ from the theoretical values? Be specific.",
+  "What is the percent error for each of the values? Show all work after the results section in your lab notebook.",
+  "Which reactions in Part B were exothermic? Which reactions were endothermic? How could you tell?",
+  "What are some experimental factors that might have influenced your results? How might they have affected your results? How much error might have been introduced into your results from this experimental procedure? Be very specific here."];
+const WFIELDS=[["wdCover","cover"],["wdTitle","title"],["wdConc","conc"],["wdD1","d1"],["wdD2","d2"],["wdEq","eqs"],...POSTQ.map((_,i)=>["wdP"+i,"p"+i])];
 function buildWord(){loadWord();
+  if(WD.disc&&!WD.d1){WD.d1=WD.disc;delete WD.disc}if(WD.post&&!WD.p0){WD.p0=WD.post;delete WD.post}
+  $("wdPost").innerHTML=POSTQ.map((q,i)=>`<label for="wdP${i}">${i+1}. ${esc(q)}</label><textarea id="wdP${i}" rows="4"></textarea>`).join("");
   $("wdSrc").textContent=currentFile?`Graphs from ${currentFile}, using the mixing times set on the Import tab.`:"Graphs from mig's data, using the mixing times set on the mig version tab.";
-  for(const[id,k]of[["wdCover","cover"],["wdConc","conc"],["wdDisc","disc"],["wdPost","post"]]){const e=$(id);e.value=WD[k]||"";e.oninput=()=>{WD[k]=e.value;saveWord()}}
+  for(const[id,k]of WFIELDS){const e=$(id);e.value=WD[k]||"";e.oninput=()=>{WD[k]=e.value;saveWord()}}
   const v=id=>parseFloat($(id)?.textContent),a=[0,1,2].map(i=>v("A11_"+i)).filter(isFinite),sg1=x=>(x>0?"+":"−")+Math.abs(x).toFixed(1);
   $("wdDH").textContent=a.length&&isFinite(v("B13_0"))&&isFinite(v("C11_0"))?`From the Report sheet tab: average ΔH reaction 1 = ${sg1(a.reduce((p,q)=>p+q,0)/a.length)} kJ/mol, reaction 2 = ${sg1(v("B13_0"))}, reaction 3 = ${sg1(v("C11_0"))} kJ/mol`:"";
   const box=$("wdGraphs");box.textContent="";
@@ -497,15 +510,24 @@ function buildWord(){loadWord();
 // starter text for empty boxes only, so nothing already typed is overwritten
 function fillWord(){const sg1=x=>(x>0?"+":"−")+Math.abs(x).toFixed(1),v=id=>parseFloat($(id)?.textContent),a=[0,1,2].map(i=>v("A11_"+i)).filter(isFinite);
   const put=(k,txt,id)=>{if((WD[k]||"").trim()||!txt)return;WD[k]=txt;$(id).value=txt};
-  put("cover","Calorimetry Lab Report\nName\nCHEM 50\nDate","wdCover");
+  put("cover","Name\nDate\nLab section","wdCover");put("title","Calorimetry","wdTitle");
   if(a.length&&isFinite(v("B13_0"))&&isFinite(v("C11_0")))
-    put("conc",`The average ΔH for reaction 1 (Mg + HCl) was ${sg1(a.reduce((p,q)=>p+q,0)/a.length)} kJ/mol. ΔH for reaction 2 (NaOH + HCl) was ${sg1(v("B13_0"))} kJ/mol, and ΔH for reaction 3 (NaHCO₃ + HCl) was ${sg1(v("C11_0"))} kJ/mol.`,"wdConc");
-  put("disc",["Notes to replace with your own paragraphs (first person):",
-    "- Which reactions were exothermic (T rose, ΔH negative) and which was endothermic (T fell, ΔH positive), with your ΔT and ΔH.",
-    a.length>1?`- Reaction 1 trials: ${a.map(sg1).join(", ")} kJ/mol. How close they are, and which trial is the odd one out and why.`:"- How consistent the trials were.",
-    "- Compare to accepted values (Mg + HCl ≈ −467, NaOH + HCl ≈ −55.8, NaHCO₃ + HCl ≈ +31 kJ/mol) and give % error = |yours − accepted| ÷ |accepted| × 100.",
-    "- Why the values are smaller than accepted: heat lost to the room, the cup absorbing heat, assuming c = 4.184 and 1.00 g/mL, gas bubbling out, unreacted Mg.",
-    "- One change that would improve the results."].join("\n"),"wdDisc");
+    put("conc",`Reaction 1: the average ΔH°rxn = ${sg1(a.reduce((p,q)=>p+q,0)/a.length)} kJ/mol. Reaction 2: the ΔH°rxn = ${sg1(v("B13_0"))} kJ/mol. Reaction 3: the ΔH°rxn = ${sg1(v("C11_0"))} kJ/mol.`,"wdConc");
+  put("eqs","Reaction 1: Mg(s) + 2HCl(aq) → MgCl₂(aq) + H₂(g)\nReaction 2: NaOH(aq) + HCl(aq) → NaCl(aq) + H₂O(l)\nReaction 3: NaHCO₃(s) + HCl(aq) → NaCl(aq) + H₂O(l) + CO₂(g)","wdEq");
+  put("d1",["Notes to replace with your own paragraph (first person):",
+    "- Name the system you assume (isolated: no heat or matter in or out; a coffee cup with a lid is treated as isolated even though it isn't perfect).",
+    "- How that shapes the analysis: all heat from the reaction stays in the solution, so q(rxn) = −q(solution) = −m·c·ΔT.",
+    "- What it means if the assumption is off: heat leaks out, so the measured ΔT and |ΔH| come out low. The vertical-line method corrects for part of this."].join("\n"),"wdD1");
+  put("d2",["Notes to replace with your own paragraph (first person):",
+    "- Expected heat transfer: exothermic (Mg, NaOH): heat flows from the reaction into the water, so T rises. Endothermic (NaHCO₃): heat flows from the water into the reaction, so T falls.",
+    "- Why: energy is conserved (first law). Bonds broken and formed change the chemical energy, and the difference shows up as heat in the surroundings.",
+    "- Why the reagents aren't in the energy balance: they are the system, the thing releasing or absorbing the heat. The water around them is the surroundings, and that is what the thermometer measures. Their mass is also tiny next to the solution's (for example, 0.1 g Mg vs. about 17 g of solution)."].join("\n"),"wdD2");
+  const hint=["Notes: use the ΔH°f table from the pre-lab section. ΔH°rxn = ΣΔH°f(products) − ΣΔH°f(reactants). Work goes in your notebook; give the three results here.",
+    "Notes: say which direction (smaller in size than theoretical) and why: heat lost to the room and the cup, assumed c and density.",
+    a.length?`Notes: % error = |experimental − theoretical| ÷ |theoretical| × 100, for reaction 1 (average ${sg1(a.reduce((p,q)=>p+q,0)/a.length)}), reaction 2 and reaction 3.`:"Notes: % error = |experimental − theoretical| ÷ |theoretical| × 100, for each reaction.",
+    "Notes: exothermic = T rose and ΔH < 0 (which ones?). Endothermic = T fell and ΔH > 0 (which one?). Say how you could tell from the graphs.",
+    "Notes: name specific factors (heat lost through the lid, cup absorbing heat, assumed c = 4.184 and 1.00 g/mL, gas escaping, unreacted Mg, thermometer ±0.2 °C, choice of mixing time), say which way each pushes ΔH, and estimate how big."];
+  hint.forEach((h,i)=>put("p"+i,h,"wdP"+i));
   RUNS.forEach((r,ri)=>{if((WD.caps[r.name]||"").trim())return;const{d,res}=runState(r);if(res.Tx==null)return;
     const nm=r.name,what=/nahco/i.test(nm)?"the NaHCO₃ was added":/naoh/i.test(nm)?"the NaOH was added":/\bmg\b/i.test(nm)?"the Mg was added":"the reactants were mixed";
     const slope=res.Tx>=d.T0?"slow cooling after the reaction":"slow warming back toward room temperature after the reaction";
@@ -514,19 +536,27 @@ function fillWord(){const sg1=x=>(x>0?"+":"−")+Math.abs(x).toFixed(1),v=id=>pa
   saveWord();$("wdMsg").textContent="Filled the empty boxes. Edit anything you like."}
 const DOCX=(()=>{const x=v=>String(v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
   const run=(t,o={})=>`<w:r>${o.b||o.sz?`<w:rPr>${o.b?"<w:b/>":""}${o.sz?`<w:sz w:val="${o.sz}"/>`:""}</w:rPr>`:""}<w:t xml:space="preserve">${x(t)}</w:t></w:r>`;
-  const para=(inner,o={})=>`<w:p>${o.center||o.keep||o.after!=null?`<w:pPr>${o.keep?"<w:keepNext/>":""}${o.after!=null?`<w:spacing w:after="${o.after}"/>`:""}${o.center?'<w:jc w:val="center"/>':""}</w:pPr>`:""}${inner}</w:p>`;
+  const para=(inner,o={})=>`<w:p><w:pPr>${o.keep?"<w:keepNext/>":""}${o.pageBefore?"<w:pageBreakBefore/>":""}<w:spacing${o.before!=null?` w:before="${o.before}"`:""}${o.after!=null?` w:after="${o.after}"`:""}/>${o.center?'<w:jc w:val="center"/>':o.right?'<w:jc w:val="right"/>':""}</w:pPr>${inner}</w:p>`;
   const text=(s,o)=>s.split(/\r?\n/).map(l=>para(l?run(l,o):"",o)).join("");
   const brk='<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
   const pic=(i,cx,cy)=>`<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${i}" name="Graph ${i}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="${i}" name="graph${i}.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="rImg${i}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`;
-  // doc = {cover, conc, graphs:[{png:Uint8Array, caption}], disc, post}
+  // doc = {cover, title, conc, graphs:[{png:Uint8Array, caption}], d1, d2, eqs, post:[answers], postQ:[questions]}
   function build(doc){let body="";const has=s=>s&&s.trim();
-    if(has(doc.cover))body+=text(doc.cover.trim(),{center:true,sz:28,after:120});
-    if(has(doc.conc))body+=para(run("Conclusion",{b:true,sz:26}),{after:80})+text(doc.conc.trim(),{after:120});
-    const cx=6.5*914400,cy=Math.round(cx*1000/1600);
-    doc.graphs.forEach((g,i)=>{if(body&&i%2===0)body+=brk;
-      body+=para(pic(i+1,cx,cy),{center:true,keep:true,after:60})+(has(g.caption)?text(g.caption.trim(),{after:0})+para("",{after:240}):para("",{after:240}))});
-    if(has(doc.disc))body+=brk+para(run("Discussion",{b:true,sz:26}),{after:80})+text(doc.disc.trim(),{after:120});
-    if(has(doc.post))body+=(has(doc.disc)?para(""):brk)+para(run("Post-lab questions",{b:true,sz:26}),{after:80})+text(doc.post.trim(),{after:120});
+    if(has(doc.cover))body+=text(doc.cover.trim(),{right:true,after:0});
+    if(has(doc.title))body+=para(run(doc.title.trim(),{b:true,sz:40}),{center:true,before:4320,after:0});
+    if(has(doc.conc))body+=para(run("Conclusion",{b:true,sz:26}),{before:2880,after:80})+text(doc.conc.trim(),{after:120});
+    const cx=6.2*914400,cy=Math.round(cx*1000/1600);
+    // a new page before every odd graph (page break on the graph's own paragraph, so no stray blank lines spill over)
+    doc.graphs.forEach((g,i)=>{const cap=has(g.caption)?g.caption.trim().split(/\r?\n/):[];
+      body+=para(pic(i+1,cx,cy),{center:true,keep:cap.length>0,after:60,pageBefore:body&&i%2===0,before:i%2?360:0});
+      cap.forEach(l=>body+=para(l?run(l):"",{after:0}))});
+    const H2=t=>para(run(t,{b:true,sz:26}),{after:80});
+    if(has(doc.d1)||has(doc.d2)||has(doc.eqs)){body+=brk+H2("Discussion");
+      for(const k of["d1","d2"])if(has(doc[k]))body+=text(doc[k].trim(),{after:160});
+      if(has(doc.eqs))body+=para(run("Chemical equations",{b:true}),{after:60})+text(doc.eqs.trim(),{after:60})}
+    const ans=doc.post.map((a,i)=>[a,i]).filter(([a])=>has(a));
+    if(ans.length){body+=(has(doc.d1)||has(doc.d2)||has(doc.eqs)?para("",{after:120}):brk)+H2("Post-lab questions");
+      for(const[a,i]of ans)body+=para(run(`${i+1}. ${doc.postQ[i]}`,{b:true}),{after:60})+text(a.trim(),{after:160})}
     const NS='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"';
     const H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
     const files=[["[Content_Types].xml",`${H}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`],
@@ -546,7 +576,7 @@ $("wdFill").onclick=fillWord;
 $("wdBtn").onclick=async()=>{const msg=$("wdMsg");
   try{const graphs=[];const cvs=[...document.querySelectorAll("#wdGraphs canvas")];
     for(let i=0;i<RUNS.length;i++)graphs.push({png:await pngBytes(cvs[i]),caption:WD.caps[RUNS[i].name]||""});
-    const blob=DOCX.build({cover:WD.cover,conc:WD.conc,graphs,disc:WD.disc,post:WD.post});window.__lastDocx=blob;
+    const blob=DOCX.build({cover:WD.cover,title:WD.title,conc:WD.conc,graphs,d1:WD.d1,d2:WD.d2,eqs:WD.eqs,post:POSTQ.map((_,i)=>WD["p"+i]),postQ:POSTQ});window.__lastDocx=blob;
     await saveBlob(blob,(currentFile||"mig").replace(/\.gambl$/i,"").replace(/[^\w.-]+/g,"_")+"-calorimetry-report.docx",msg)}
   catch(err){msg.textContent="Couldn't build the Word file: "+err.message}};
 function migSheet(){const o={...MIGSHEET};MIG.forEach((r,i)=>{const d=defaults(r),x=solve(r,{...d,...(selMap["mig|"+r.name]||{})}),key=["A?_0","A?_1","A?_2","B?_0","C?_0"][i];if(!key)return;
