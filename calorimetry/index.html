@@ -93,7 +93,7 @@ raw max    highest reading in the run (lowest for NaHCO3)
 ΔT         final T − initial T</pre>
 <div id="word" hidden>
 <p><small>Type your own text. "Download Word file" makes a .docx in the report order: cover page with your conclusion, then the graphs two per page with your caption under each, then discussion and post-lab answers. Pages use 0.5" margins. Empty boxes are left out. What you type stays saved in this browser.</small></p>
-<div class="row"><button type="button" id="wdBtn">Download Word file</button><small id="wdMsg"></small></div>
+<div class="row"><button type="button" id="wdFill">Autofill empty boxes</button><button type="button" id="wdBtn">Download Word file</button><small id="wdMsg"></small></div>
 <h2>Cover page</h2>
 <label for="wdCover">One line each: title, name, class, date, partners</label><textarea id="wdCover" rows="5"></textarea>
 <label for="wdConc">Conclusion</label> <small id="wdDH"></small><textarea id="wdConc" rows="5"></textarea>
@@ -494,6 +494,24 @@ function buildWord(){loadWord();
     box.appendChild(g);const ti=g.querySelector("input"),ca=g.querySelector("textarea"),cv=g.querySelector("canvas");
     ti.value=WD.titles[r.name]??r.name;ca.value=WD.caps[r.name]||"";graphCanvas(r,ri,ti.value,cv);
     ti.oninput=()=>{WD.titles[r.name]=ti.value;saveWord();graphCanvas(r,ri,ti.value,cv)};ca.oninput=()=>{WD.caps[r.name]=ca.value;saveWord()}})}
+// starter text for empty boxes only, so nothing already typed is overwritten
+function fillWord(){const sg1=x=>(x>0?"+":"−")+Math.abs(x).toFixed(1),v=id=>parseFloat($(id)?.textContent),a=[0,1,2].map(i=>v("A11_"+i)).filter(isFinite);
+  const put=(k,txt,id)=>{if((WD[k]||"").trim()||!txt)return;WD[k]=txt;$(id).value=txt};
+  put("cover","Calorimetry Lab Report\nName\nCHEM 50\nDate","wdCover");
+  if(a.length&&isFinite(v("B13_0"))&&isFinite(v("C11_0")))
+    put("conc",`The average ΔH for reaction 1 (Mg + HCl) was ${sg1(a.reduce((p,q)=>p+q,0)/a.length)} kJ/mol. ΔH for reaction 2 (NaOH + HCl) was ${sg1(v("B13_0"))} kJ/mol, and ΔH for reaction 3 (NaHCO₃ + HCl) was ${sg1(v("C11_0"))} kJ/mol.`,"wdConc");
+  put("disc",["Notes to replace with your own paragraphs (first person):",
+    "- Which reactions were exothermic (T rose, ΔH negative) and which was endothermic (T fell, ΔH positive), with your ΔT and ΔH.",
+    a.length>1?`- Reaction 1 trials: ${a.map(sg1).join(", ")} kJ/mol. How close they are, and which trial is the odd one out and why.`:"- How consistent the trials were.",
+    "- Compare to accepted values (Mg + HCl ≈ −467, NaOH + HCl ≈ −55.8, NaHCO₃ + HCl ≈ +31 kJ/mol) and give % error = |yours − accepted| ÷ |accepted| × 100.",
+    "- Why the values are smaller than accepted: heat lost to the room, the cup absorbing heat, assuming c = 4.184 and 1.00 g/mL, gas bubbling out, unreacted Mg.",
+    "- One change that would improve the results."].join("\n"),"wdDisc");
+  RUNS.forEach((r,ri)=>{if((WD.caps[r.name]||"").trim())return;const{d,res}=runState(r);if(res.Tx==null)return;
+    const nm=r.name,what=/nahco/i.test(nm)?"the NaHCO₃ was added":/naoh/i.test(nm)?"the NaOH was added":/\bmg\b/i.test(nm)?"the Mg was added":"the reactants were mixed";
+    const slope=res.Tx>=d.T0?"slow cooling after the reaction":"slow warming back toward room temperature after the reaction";
+    const c=`Graph ${ri+1}. Temperature vs. time for ${WD.titles[r.name]??nm}. The horizontal dashed line marks the initial temperature, Ti = ${f(d.T0,1)} °C. The vertical dashed line marks when ${what} (${f(res.tx,1)} s). The sloped dashed line is the ${slope}, extended back to the vertical line. Where the two cross is the final temperature, Tf = ${f(res.Tx,1)} °C.`;
+    WD.caps[r.name]=c;$("wc"+ri).value=c});
+  saveWord();$("wdMsg").textContent="Filled the empty boxes. Edit anything you like."}
 const DOCX=(()=>{const x=v=>String(v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
   const run=(t,o={})=>`<w:r>${o.b||o.sz?`<w:rPr>${o.b?"<w:b/>":""}${o.sz?`<w:sz w:val="${o.sz}"/>`:""}</w:rPr>`:""}<w:t xml:space="preserve">${x(t)}</w:t></w:r>`;
   const para=(inner,o={})=>`<w:p>${o.center||o.keep||o.after!=null?`<w:pPr>${o.keep?"<w:keepNext/>":""}${o.after!=null?`<w:spacing w:after="${o.after}"/>`:""}${o.center?'<w:jc w:val="center"/>':""}</w:pPr>`:""}${inner}</w:p>`;
@@ -524,6 +542,7 @@ async function saveBlob(blob,name,msg){const dl=window.claude?.use?await window.
   if(dl){try{await dl.save({filename:name,data:blob});msg.textContent=`Saved ${name}.`}catch(e){msg.textContent=e?.code==="declined"?"Download cancelled.":"Downloads aren't available here; use the GitHub Pages link."}return}
   const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000);msg.textContent=`Downloaded ${name}.`}
+$("wdFill").onclick=fillWord;
 $("wdBtn").onclick=async()=>{const msg=$("wdMsg");
   try{const graphs=[];const cvs=[...document.querySelectorAll("#wdGraphs canvas")];
     for(let i=0;i<RUNS.length;i++)graphs.push({png:await pngBytes(cvs[i]),caption:WD.caps[RUNS[i].name]||""});
