@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Exam III Problem Finder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: grid of problem-type cards, each = spot line, boxed formula, numbered steps, slip/fix */
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --fg: #1b2230; --muted: #6a7384;
+  --line: #dde1e8; --accent: #1f5fa8; --box: #eef3fa; --warn: #a2471d;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12161d; --card: #1a2029; --fg: #e5e9f0; --muted: #98a2b3;
+  --line: #2c3442; --accent: #7fb0ec; --box: #1f2a3a; --warn: #f0a07a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #12161d; --card: #1a2029; --fg: #e5e9f0; --muted: #98a2b3;
+  --line: #2c3442; --accent: #7fb0ec; --box: #1f2a3a; --warn: #f0a07a; color-scheme: dark }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.45; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1 { font-size: 1.5rem; margin: 0 0 4px; text-wrap: balance; }
+.sub { color: var(--muted); margin: 0 0 18px; }
+h2.sec { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 26px 0 10px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; }
+@media (max-width: 400px) { .grid { grid-template-columns: 1fr; } }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+.card h3 { margin: 0; font-size: 1.02rem; }
+.card h3 small { color: var(--muted); font-weight: 400; font-size: .8rem; }
+.spot { color: var(--muted); font-size: .88rem; margin: 0; }
+.f { background: var(--box); border-radius: 6px; padding: 7px 10px; font-family: var(--mono); font-weight: 600; font-size: .95rem; overflow-x: auto; white-space: nowrap; }
+.f div + div { margin-top: 3px; }
+ol { margin: 0; padding-left: 20px; display: grid; gap: 2px; }
+.slip { color: var(--warn); font-size: .87rem; margin: 0; }
+.slip b { font-weight: 600; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; font-variant-numeric: tabular-nums; }
+td { padding: 3px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td:first-child { font-family: var(--mono); font-weight: 600; white-space: nowrap; }
+.scroll { overflow-x: auto; }
+.search { display: grid; gap: 6px; margin-bottom: 6px; position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); padding-block: 8px; z-index: 5; }
+.search label { font-weight: 600; font-size: .9rem; }
+#q { font: inherit; font-size: 1rem; padding: 9px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--fg); width: 100%; box-sizing: border-box; }
+#q:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.card.best { outline: 2px solid var(--accent); }
+mark { background: var(--box); color: var(--accent); }
+.ex { font-size: .87rem; border-top: 1px dashed var(--line); padding-top: 6px; margin: 0; }
+.ex b { font-weight: 600; }
+.sets { font-size: .8rem; color: var(--accent); margin: 0; font-weight: 600; }
+.tag { font-family: var(--mono); font-size: .78rem; color: var(--accent); font-weight: 600; margin-right: 4px; }
+.router td:first-child { font-family: var(--sans); font-weight: 400; white-space: normal; }
+.router td:last-child { font-family: var(--mono); font-weight: 600; white-space: nowrap; color: var(--accent); }
+.wide { grid-column: 1 / -1; }
+nav.jump { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .9rem; margin: 0 0 4px; }
+nav.jump a { color: var(--accent); }
+.tabs { display: flex; gap: 6px; margin: 0 0 12px; flex-wrap: wrap; }
+.tabs button { font: inherit; font-weight: 600; padding: 7px 14px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--fg); cursor: pointer; }
+.tabs button[aria-pressed="true"] { background: var(--accent); color: var(--card); border-color: var(--accent); }
+.tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sheet { max-width: 8.5in; margin: 0 auto; background: var(--card); border: 1px solid var(--line); padding: 14px 16px; font-size: 11.5px; line-height: 1.3; columns: 3 15em; column-gap: 12px; box-sizing: border-box; }
+@media (max-width: 640px) { .sheet { columns: 1; font-size: 13px; } }
+.sheet h4 { column-span: all; margin: 0 0 8px; font-size: 13px; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.sheet h4 span { color: var(--muted); font-weight: 400; }
+.box { break-inside: avoid; border: 1px solid var(--line); border-radius: 4px; padding: 4px 6px; margin: 0 0 6px; }
+.box b.t { display: block; }
+.box .s { color: var(--muted); font-style: italic; display: block; }
+.box .m { font-family: var(--mono); font-weight: 600; background: var(--box); border-radius: 3px; padding: 1px 4px; display: block; margin: 2px 0; overflow-wrap: anywhere; }
+.box ol { padding-left: 15px; gap: 0; }
+.box .w { color: var(--warn); display: block; }
+.sheet-note { max-width: 8.5in; margin: 0 auto 8px; color: var(--muted); font-size: .88rem; }
+[hidden] { display: none !important; }
+.box { cursor: pointer; }
+.box:hover { border-color: var(--accent); }
+.box:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.box .exp { display: block; margin-top: 4px; padding: 5px 6px; background: var(--box); border-radius: 3px; font-size: 1.05em; line-height: 1.4; }
+.box .hint { float: right; font-size: .78em; color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<h1>CHEM 50 Exam III</h1>
+<p class="spot">QS = Quantum set · GPS = Gas Problem Set · GR = Gas Review · Exam = last year's Exam III</p>
+<div class="tabs" role="group" aria-label="View"><button type="button" id="tab-finder" aria-pressed="true">Problem finder</button><button type="button" id="tab-sheet" aria-pressed="false">Cheat sheet</button></div>
+<div id="finder-view">
+
+<div class="search">
+  <input id="q" type="search" placeholder="Search: threshold frequency, over water, isoelectronic…" aria-label="Search problem types" autocomplete="off">
+  <p id="hint" class="spot" aria-live="polite"></p>
+</div>
+
+<h2 class="sec" id="start">Keywords</h2>
+<div class="grid">
+  <div class="card wide" data-k="which card router keywords start">
+        <div class="scroll"><table class="router">
+      <tr><td>P, V, T, mmHg, atm, L of gas, "at STP", flask, cylinder</td><td>Gases G1–G12</td></tr>
+      <tr><td>wavelength, nm, frequency, Hz, s⁻¹, photon, light, laser</td><td>Ch 8 L1–L4, L8</td></tr>
+      <tr><td>threshold, binding energy, work function, ejected electrons</td><td>L5</td></tr>
+      <tr><td>hydrogen atom, "falls from n = __", "excited", "ground state", Balmer</td><td>L6, L7</td></tr>
+      <tr><td>a moving electron / ion / particle with a mass and speed</td><td>L8 (de Broglie)</td></tr>
+      <tr><td>n, l, mₗ, mₛ, "quantum numbers", "subshell", "orbital"</td><td>P1, P2, P4</td></tr>
+      <tr><td>"electron configuration", [Xe], "unpaired", "last electron added"</td><td>P3, P4</td></tr>
+      <tr><td>an ion (Fe³⁺, S²⁻), "isoelectronic", "3d electrons"</td><td>P5</td></tr>
+      <tr><td>"arrange", "largest radius", "ionization energy", "electron affinity", metallic</td><td>P6</td></tr>
+      <tr><td>a list of I₁, I₂, I₃… or a graph of them</td><td>P7</td></tr>
+      <tr><td>a reaction of bare ions/atoms, "heat of reaction", "kJ" with F⁻, C⁴⁺…</td><td>P8 (ΔH from IE and EA)</td></tr>
+    </table></div>
+  </div>
+  <div class="card" data-k="units constants convert nm meters kelvin mmhg atm planck avogadro speed of light rydberg">
+    <h3>Constants and conversions</h3>
+    <div class="scroll"><table>
+      <tr><td>h</td><td>6.626×10⁻³⁴ J·s</td></tr>
+      <tr><td>c</td><td>3.00×10⁸ m/s</td></tr>
+      <tr><td>Nₐ</td><td>6.022×10²³ /mol</td></tr>
+      <tr><td>R_H</td><td>2.18×10⁻¹⁸ J</td></tr>
+      <tr><td>mₑ</td><td>9.11×10⁻³¹ kg</td></tr>
+      <tr><td>R</td><td>0.08206 L·atm/(mol·K)</td></tr>
+      <tr><td>nm → m</td><td>× 10⁻⁹ (always, before any formula)</td></tr>
+      <tr><td>kJ/mol → J each</td><td>× 1000, then ÷ Nₐ</td></tr>
+      <tr><td>°C → K</td><td>+ 273.15</td></tr>
+      <tr><td>mmHg → atm</td><td>÷ 760 (torr = mmHg)</td></tr>
+      <tr><td>STP</td><td>0 °C, 1 atm: 1 mol gas = 22.4 L</td></tr>
+    </table></div>
+  </div>
+  <div class="card" data-k="symbols lambda nu mu phi greek letters what does mean wavelength frequency delta">
+    <h3>Symbols</h3>
+    <div class="scroll"><table>
+      <tr><td>λ (lambda)</td><td>wavelength, m</td></tr>
+      <tr><td>ν (nu)</td><td>frequency, s⁻¹ = Hz (not v!)</td></tr>
+      <tr><td>v</td><td>velocity (speed), m/s</td></tr>
+      <tr><td>E</td><td>energy, J</td></tr>
+      <tr><td>φ (phi)</td><td>binding energy / work function</td></tr>
+      <tr><td>ν₀</td><td>threshold frequency</td></tr>
+      <tr><td>KE</td><td>kinetic energy = ½mv²</td></tr>
+      <tr><td>Δ (delta)</td><td>change: final − initial</td></tr>
+      <tr><td>n, l, mₗ, mₛ</td><td>shell, shape, box, spin</td></tr>
+      <tr><td>Zeff</td><td>pull felt by outer electron</td></tr>
+      <tr><td>I₁, EA</td><td>ionization energy, electron affinity</td></tr>
+      <tr><td>X, M, d</td><td>mole fraction, molar mass, density</td></tr>
+    </table></div>
+  </div>
+  <div class="card" data-k="habits mistakes rounding diatomic direction check">
+    <h3>Habits that catch most misses</h3>
+    <p class="slip"><b>Write the type first</b> (e.g. "L5 photoelectric"), then the formula, then numbers.</p>
+    <p class="slip"><b>Per one vs per mole:</b> hν and hc/λ give J for one photon or one atom. Tables give kJ/mol. Convert before comparing.</p>
+    <p class="slip"><b>Diatomic:</b> H₂ N₂ O₂ F₂ Cl₂ Br₂ I₂. O₂ = 32.00.</p>
+    <p class="slip"><b>Keep every digit</b> until the end; round once. Molar masses to 2 decimals.</p>
+    <p class="slip"><b>Direction check:</b> shorter λ = more energy. Squeezing a gas = smaller V. Answer in the unit asked (nm, kJ/mol, g).</p>
+  </div>
+</div>
+
+<h2 class="sec" id="gases">Gases</h2>
+<div class="grid">
+  <div class="card" data-k="one set of conditions pv=nrt volume occupied grams pressure exerted cylinder atoms molecules how many">
+    <h3><span class="tag">G1</span>One set of conditions</h3>
+    <p class="spot">one P, one V, one T; asks P, V, n, grams, or # of atoms</p>
+    <div class="f">PV = nRT</div>
+    <ol><li>List P, V, n, T. Convert: atm, L, mol (g ÷ M), K.</li><li>Rearrange for the unknown with letters (n = PV/RT, V = nRT/P…).</li><li>Plug in. Grams: × M. Atoms/molecules: × Nₐ.</li></ol>
+    <p class="ex"><b>Ex:</b> 2.00 g O₂ at 25 °C, 1.00 atm. n = 2.00/32.00 = 0.0625 mol. V = (0.0625)(0.08206)(298.15)/1.00 = <b>1.53 L</b></p>
+    <p class="sets">Sets: GR 1, 2, 3, 4 · GPS 5, 7, 9</p>
+  </div>
+  <div class="card" data-k="before after changes rises bubble heated compressed initial final combined gas law">
+    <h3><span class="tag">G2</span>Before → after (same gas)</h3>
+    <p class="spot">"rises to", "is heated to", a bubble moves up a lake</p>
+    <div class="f">P₁V₁/T₁ = P₂V₂/T₂</div>
+    <ol><li>List state 1 and state 2. T in K.</li><li>Cross out anything that stays the same.</li><li>Multiply both sides to isolate the unknown, then plug in.</li></ol>
+    <p class="ex"><b>Ex:</b> 1.0 L at 1.0 atm, 300 K → 2.0 atm, 400 K. V₂ = P₁V₁T₂/(T₁P₂) = (1.0)(1.0)(400)/(300·2.0) = <b>0.67 L</b></p>
+    <p class="sets">Sets: GPS 6</p>
+  </div>
+  <div class="card" data-k="density g/l molar mass identify the gas unknown noble gas molecular formula empirical sulfur oxygen chloroform">
+    <h3><span class="tag">G3</span>Density / molar mass / identify the gas</h3>
+    <p class="spot">"density in g/L", "molar mass", "identify the gas", empirical formula + gas data</p>
+    <div class="f"><div>d = PM/RT</div><div>M = grams ÷ n, n = PV/RT</div></div>
+    <ol><li>Density: plug P (atm), M, T (K) into d = PM/RT.</li><li>Molar mass: n = PV/RT, then M = g ÷ n.</li><li>Identify: match M to the periodic table (noble gas) or to SO₂/SO₃. Molecular formula: M ÷ M(empirical) = multiplier.</li></ol>
+    <p class="ex"><b>Ex:</b> 0.500 g in 250 mL at 1.00 atm, 300 K. n = (1.00)(0.250)/(0.08206·300) = 0.01015 mol. M = 0.500/0.01015 = <b>49.2 g/mol</b></p>
+    <p class="sets">Sets: GPS 8, 10, 11 · GR 5, 6 (key's 31.6 is wrong; it's 121), 7</p>
+  </div>
+  <div class="card" data-k="partial pressure mole fraction mixture total pressure">
+    <h3><span class="tag">G4</span>Partial pressure / mole fraction</h3>
+    <p class="spot">several gases with moles; "partial pressure of Ar"</p>
+    <div class="f"><div>X_A = n_A / n_total</div><div>P_A = X_A · P_total</div></div>
+    <ol><li>Add all moles for n_total.</li><li>X = n_A ÷ n_total.</li><li>× P_total (answer keeps P_total's unit).</li></ol>
+    <p class="ex"><b>Ex:</b> 1 mol A + 3 mol B at 800 mmHg. X_A = 0.25 → P_A = <b>200 mmHg</b></p>
+    <p class="sets">Sets: GPS 12</p>
+  </div>
+  <div class="card" data-k="flasks opened connected valve stopcock mix final pressure in flask">
+    <h3><span class="tag">G5</span>Flasks opened and mixed</h3>
+    <p class="spot">table of flasks with P and V; valves open; "final pressure"</p>
+    <div class="f">P_final = (P₁V₁ + P₂V₂ + P₃V₃) / V_total</div>
+    <ol><li>Multiply P × V for each flask.</li><li>Add them.</li><li>÷ total volume of all opened flasks. Same P in every flask.</li></ol>
+    <p class="ex"><b>Ex:</b> 2.00 atm × 1.00 L and 1.00 atm × 3.00 L. (2.00 + 3.00)/4.00 = <b>1.25 atm</b></p>
+    <p class="sets">Sets: Exam 1.5</p>
+  </div>
+  <div class="card" data-k="density of air mixture percent by volume average molar mass fluorine nitrogen krypton">
+    <h3><span class="tag">G6</span>Density of a mixture</h3>
+    <p class="spot">"% by volume" of each gas + P and T; asks density</p>
+    <div class="f"><div>M_avg = X_A·M_A + X_B·M_B + …</div><div>d = P·M_avg / RT</div></div>
+    <ol><li>% ÷ 100 = mole fraction X.</li><li>Weighted M_avg (diatomics doubled: F₂ = 38.00, N₂ = 28.02).</li><li>d = PM/RT.</li></ol>
+    <p class="ex"><b>Ex:</b> 50% N₂, 50% O₂ at 1 atm, 0 °C. M = 0.5(28.02) + 0.5(32.00) = 30.01. d = 30.01/(0.08206·273.15) = <b>1.34 g/L</b></p>
+    <p class="sets">Sets: GPS 14 · Exam 2.5</p>
+  </div>
+  <div class="card" data-k="gas stoichiometry reaction produced decomposition limiting reactant final pressure cylinder ignited molarity hcl mg kclo3 react completely">
+    <h3><span class="tag">G7</span>Gas stoichiometry (incl. limiting + final P)</h3>
+    <p class="spot">balanced reaction + a gas; "how many L produced", "what mass", "final pressure after ignition"</p>
+    <div class="f">given → mol → × (coef want / coef given) → mol → answer</div>
+    <ol><li>Balance the equation.</li><li>Given → mol: g ÷ M, or M × L (solution), or PV/RT (gas).</li><li>Two amounts given? Limiting = the one that runs out first.</li><li>Mol ratio → mol wanted → V = nRT/P or g = mol × M.</li><li>Final pressure: n = all gases left (product + leftover excess + H₂O(g)), P = nRT/V.</li></ol>
+    <p class="ex"><b>Ex:</b> 10.0 g CaCO₃ → CaO + CO₂ at STP. 10.0/100.09 = 0.0999 mol CO₂ × 22.4 = <b>2.24 L</b>. Density of a sealed mixture = total mass ÷ V (mass never changes).</p>
+    <p class="sets">Sets: GPS 13, 16, 17, 18, 19 · GR 9, 10, 11, 12 · HW9 1, 2, 3, 4</p>
+  </div>
+  <div class="card" data-k="combustion air octane hexane mole fraction of oxygen dry air burning gasoline">
+    <h3><span class="tag">G8</span>Fuel burned with air</h3>
+    <p class="spot">octane/hexane + "mole fraction of O₂ in air is 0.2095"</p>
+    <div class="f"><div>mol air = mol O₂ ÷ X(O₂)</div><div>mol O₂ = mol air × X(O₂)</div></div>
+    <ol><li>Balance: C₈H₁₈ + 12.5 O₂ → 8 CO₂ + 9 H₂O.</li><li>Fuel: mL × density → g ÷ M → mol.</li><li>× 12.5 → mol O₂, ÷ X → mol air.</li><li>V = nRT/P (or × 22.4 at STP). Backward problem (air given): run the chain in reverse.</li></ol>
+    <p class="ex"><b>Ex:</b> 1.00 mL octane (0.70 g/mL). 0.70/114.23 = 0.006128 mol × 12.5 = 0.0766 mol O₂ ÷ 0.21 = 0.365 mol air × 22.4 = <b>8.18 L</b> at STP</p>
+    <p class="sets">Sets: GPS 20 · GR 13, 14 · HW9 5 · Exam 2.3 (backward)</p>
+  </div>
+  <div class="card" data-k="collected over water displacing water vapor pressure">
+    <h3><span class="tag">G9</span>Collected over water</h3>
+    <p class="spot">"collected over water / by displacing water at __ °C"</p>
+    <div class="f">P_gas = P_atm − P_H₂O</div>
+    <ol><li>P_H₂O from table (page 4) at that T.</li><li>Subtract, ÷ 760 → atm.</li><li>n = P_gas·V/RT, then stoichiometry if asked (G7).</li></ol>
+    <p class="ex"><b>Ex:</b> 0.500 L H₂ at 25 °C, 760 mmHg. 760 − 23.8 = 736.2 mmHg = 0.9687 atm. n = (0.9687)(0.500)/(0.08206·298.15) = <b>0.0198 mol</b></p>
+    <p class="sets">Sets: GR 8 · Exam 2.4</p>
+  </div>
+  <div class="card" data-k="reaction in pressures sealed flask initial pressures constant temperature total pressure after reaction gas a gas b">
+    <h3><span class="tag">G10</span>Reaction solved in pressures</h3>
+    <p class="spot">gas A + gas B with starting pressures, constant T and V; "total pressure after"</p>
+    <div class="f">constant T and V → P ∝ n (treat atm like mol)</div>
+    <ol><li>Find limiting reactant using pressures × coefficients.</li><li>Before / change / after table in atm.</li><li>Add everything left (gases only).</li></ol>
+    <p class="ex"><b>Ex:</b> A + 2B → C, 2.00 atm each. B limiting: uses 2.00 B, 1.00 A, makes 1.00 C. Left: 1.00 A + 1.00 C = <b>2.00 atm</b></p>
+    <p class="sets">Sets: GPS 15 · Exam 2.2</p>
+  </div>
+  <div class="card" data-k="manometer mercury column open tube closed vacuum stopcock height h">
+    <h3><span class="tag">G11</span>Manometer</h3>
+    <p class="spot">U-tube of mercury with height h</p>
+    <ol><li>Closed end (vacuum): P_gas = h.</li><li>Open end, mercury higher on the open side: P_gas = P_atm + h.</li><li>Open end, mercury higher on the gas side: P_gas = P_atm − h. cm × 10 = mmHg.</li></ol>
+    <p class="ex"><b>Why:</b> the side with more push shoves the mercury away. Opening a stopcock to more gas pushes harder, so h grows.</p>
+    <p class="sets">Sets: GPS 3, 4 · HW7 MCQ</p>
+  </div>
+  <div class="card" data-k="kinetic molecular theory assumptions ideal speed average kinetic energy fastest">
+    <h3><span class="tag">G12</span>KMT concepts</h3>
+    <p class="spot">"assumptions of the ideal gas law", "fastest", "highest average KE"</p>
+    <ol><li>Molecules have negligible volume.</li><li>Constant random motion; elastic collisions.</li><li>No attractions or repulsions.</li><li>Average KE ∝ T (K): same T → same KE.</li></ol>
+    <p class="ex"><b>Speed:</b> same T → lighter is faster (u = √(3RT/M)). Same T → same KE for every gas.</p>
+    <p class="sets">Sets: GPS 1, 2 · Exam 1.2</p>
+  </div>
+</div>
+
+<h2 class="sec" id="light">Ch 8 Quantum: light and the hydrogen atom</h2>
+<div class="grid">
+  <div class="card wide" data-k="chain map wavelength frequency energy">
+    <h3>The whole chapter is one chain</h3>
+    <div class="f">λ (m) ⟷ c = λν ⟷ ν (s⁻¹) ⟷ E = hν ⟷ E one photon (J) ⟷ × Nₐ ⟷ E per mole (J/mol)</div>
+  </div>
+  <div class="card" data-k="wavelength from frequency s-1 hz radiation">
+    <h3><span class="tag">L1</span>λ ⟷ ν</h3>
+    <p class="spot">gives frequency, asks wavelength (or reverse)</p>
+    <div class="f">c = λν → λ = c/ν, ν = c/λ</div>
+    <ol><li>λ in m. ν in s⁻¹ (= Hz).</li><li>Divide c by the one you have.</li></ol>
+    <p class="ex"><b>Ex:</b> 650 nm = 6.50×10⁻⁷ m. ν = 3.00×10⁸ / 6.50×10⁻⁷ = <b>4.62×10¹⁴ s⁻¹</b></p>
+    <p class="sets">Sets: QS 8</p>
+  </div>
+  <div class="card" data-k="energy of one photon joules microwave mole of photons how many photons flash contains kj">
+    <h3><span class="tag">L2</span>Photon energy / # of photons</h3>
+    <p class="spot">"energy of one photon", "per mole", "how many photons in __ kJ"</p>
+    <div class="f"><div>E = hc/λ (one photon)</div><div># photons = E_total ÷ E_one</div></div>
+    <ol><li>λ → m. E_one = hc/λ.</li><li>Per mole: × Nₐ.</li><li>How many: total (J, not kJ) ÷ E_one.</li></ol>
+    <p class="ex"><b>Ex:</b> 400 nm. E = (6.626×10⁻³⁴)(3.00×10⁸)/(4.00×10⁻⁷) = 4.97×10⁻¹⁹ J. 1.00 J holds 1.00/4.97×10⁻¹⁹ = <b>2.01×10¹⁸ photons</b></p>
+    <p class="sets">Sets: QS 9, 15</p>
+  </div>
+  <div class="card" data-k="bond breaking longest wavelength break bond kj/mol free halogen atoms cl2 dissociate">
+    <h3><span class="tag">L3</span>Bond energy → longest λ</h3>
+    <p class="spot">"breaking a bond requires __ kJ/mol", "longest wavelength that can break it"</p>
+    <div class="f">E (one bond, J) = kJ/mol × 1000 ÷ Nₐ → λ = hc/E</div>
+    <ol><li>Per mole → per one bond (× 1000 ÷ Nₐ).</li><li>λ = hc/E. "Longest" because one photon must at least pay the bond energy; longer λ = weaker photon.</li><li>× 10⁹ if they want nm.</li></ol>
+    <p class="ex"><b>Ex:</b> 400 kJ/mol → 4.00×10⁵/6.022×10²³ = 6.64×10⁻¹⁹ J. λ = 1.988×10⁻²⁵/6.64×10⁻¹⁹ = 2.99×10⁻⁷ m = <b>299 nm</b></p>
+    <p class="sets">Sets: QS 18 · HW9 6 · Exam 1.3</p>
+  </div>
+  <div class="card" data-k="photoelectric threshold frequency binding energy work function ejected electrons maximum velocity metal plate kinetic energy">
+    <h3><span class="tag">L4</span>Photoelectric effect</h3>
+    <p class="spot">"threshold frequency", "binding energy", "ejected electrons", "maximum velocity"</p>
+    <div class="f"><div>E_photon = φ + KE</div><div>KE = ½mv²,  φ = hν₀</div></div>
+    <ol><li>Threshold only: φ = hν₀ (J per electron). Per mole: × Nₐ.</li><li>Given λ and electron speed: E_photon = hc/λ; KE = ½(9.11×10⁻³¹)v².</li><li>φ = E_photon − KE. × Nₐ ÷ 1000 → kJ/mol.</li></ol>
+    <p class="ex"><b>Ex:</b> 300 nm photon = 6.63×10⁻¹⁹ J; electron at 8.0×10⁵ m/s has KE = ½(9.11×10⁻³¹)(8.0×10⁵)² = 2.92×10⁻¹⁹ J. φ = 3.71×10⁻¹⁹ J × Nₐ = <b>223 kJ/mol</b></p>
+    <p class="sets">Sets: QS 10, 19 · HW9 7</p>
+  </div>
+  <div class="card" data-k="hydrogen atom transition falls from excite energy required emitted wavelength frequency balmer principal energy level">
+    <h3><span class="tag">L5</span>H-atom transition (n's given)</h3>
+    <p class="spot">"falls from n = 7 to n = 4", "energy to excite 1 → 4", "frequency emitted"</p>
+    <div class="f">ΔE = −2.18×10⁻¹⁸ (1/n_f² − 1/n_i²)</div>
+    <ol><li>Plug n_final and n_initial in that order.</li><li>Negative = emitted (falls). Positive = absorbed (goes up). Photon energy = the size.</li><li>λ = hc/|ΔE| (× 10⁹ for nm), or ν = |ΔE|/h.</li></ol>
+    <p class="ex"><b>Ex:</b> 3 → 2: ΔE = −2.18×10⁻¹⁸(1/4 − 1/9) = −3.03×10⁻¹⁹ J (emitted). λ = 1.988×10⁻²⁵/3.03×10⁻¹⁹ = <b>656 nm</b></p>
+    <p class="sets">Sets: QS 11, 12, 13 · (QS 14: λ given → just E = hc/λ)</p>
+  </div>
+  <div class="card" data-k="original state principal quantum number find n initial excited level two steps falls to ground state third energy level">
+    <h3><span class="tag">L6</span>H-atom transition (find the starting n)</h3>
+    <p class="spot">gives λ of the photon(s) + the final level; asks the original n</p>
+    <div class="f">E_photon = 2.18×10⁻¹⁸ (1/n_f² − 1/n_i²)  →  1/n_i² = 1/n_f² − E/2.18×10⁻¹⁸</div>
+    <ol><li>E = hc/λ for each photon. Two steps? Add the energies (start → ground = both jumps).</li><li>Solve: 1/n_i² = 1/n_f² − E/R_H.</li><li>n_i = 1/√(that). Should come out close to a whole number.</li></ol>
+    <p class="ex"><b>Ex:</b> 434 nm photon, falls to n = 2. E = 4.58×10⁻¹⁹ J. 1/n² = 0.2500 − 0.2101 = 0.0399 → n² = 25.1 → <b>n = 5</b></p>
+    <p class="sets">Sets: HW9 9 · Exam 1.1</p>
+  </div>
+  <div class="card" data-k="laser pulses melt ice heat water photovoltaic efficient photons needed fewest number of pulses">
+    <h3><span class="tag">L7</span>Light energy used as heat</h3>
+    <p class="spot">laser pulses melting ice, light heating water, "% efficient"</p>
+    <div class="f"><div>heat needed: q = m·c·ΔT  or  mol × ΔH_fus</div><div># photons = q ÷ E_one;  # pulses = photons ÷ photons per pulse</div></div>
+    <ol><li>Heat needed in J: melting = (g ÷ 18.02) × 6010 J/mol; heating = g × 4.184 × ΔT.</li><li>% efficient: light needed = q ÷ (efficiency as a decimal).</li><li>E_one = hc/λ. Photons = J ÷ E_one. Pulses = photons ÷ photons per pulse (or J ÷ J per pulse).</li></ol>
+    <p class="ex"><b>Ex:</b> heat 5.0 g water by 15 °C: q = 5.0(4.184)(15) = 314 J. 500 nm photon = 3.98×10⁻¹⁹ J → <b>7.9×10²⁰ photons</b></p>
+    <p class="sets">Sets: QS 20 · HW9 8, 10 · Exam 2.1</p>
+  </div>
+  <div class="card" data-k="de broglie wavelength electron microscope moving velocity ion mass particle">
+    <h3><span class="tag">L8</span>de Broglie wavelength</h3>
+    <p class="spot">a moving electron, ion, or ball with mass and speed</p>
+    <div class="f">λ = h / (m·v)   m in kg, v in m/s</div>
+    <ol><li>Mass in kg: g × 10⁻³. One atom/ion: (g/mol ÷ 1000) ÷ Nₐ.</li><li>Speed in m/s: km/s × 1000.</li><li>Plug in.</li></ol>
+    <p class="ex"><b>Ex:</b> electron at 1.0×10⁶ m/s: λ = 6.626×10⁻³⁴/(9.11×10⁻³¹ × 1.0×10⁶) = <b>7.3×10⁻¹⁰ m</b></p>
+    <p class="sets">Sets: QS 16, 17 · HW8 MCQ</p>
+  </div>
+  <div class="card wide" data-k="concepts light brightness color spectrum emission absorption uncertainty">
+    <h3>Ch 8 concept facts (MCQ)</h3>
+    <ol><li>Brightness = number of photons. Color (λ) = energy per photon.</li><li>Low → high energy: radio, microwave, IR, visible (red → violet), UV, X-ray, gamma.</li><li>Falling = emits (bright lines). Going up = absorbs. Same element, same λ.</li><li>You can't know an electron's exact position and speed at once (uncertainty). Orbitals are probability maps.</li></ol>
+  </div>
+</div>
+
+<h2 class="sec" id="atoms">Ch 9 Periodic properties</h2>
+<div class="grid">
+  <div class="card" data-k="quantum numbers not possible allowed set subshell represent n l ml ms">
+    <h3><span class="tag">P1</span>Allowed quantum numbers / name the subshell</h3>
+    <p class="spot">"which set is not possible", "n = 4, l = 1 represents a ___ subshell"</p>
+    <div class="f"><div>n = 1, 2, 3…   l = 0 … n−1   mₗ = −l … +l   mₛ = ±½</div><div>l: 0 = s, 1 = p, 2 = d, 3 = f</div></div>
+    <ol><li>Check each rule left to right. One break = not possible.</li><li>Subshell name = n + letter for l (n = 3, l = 1 → 3p).</li></ol>
+    <p class="ex"><b>Ex:</b> (3, 2, −3, +½): l = 2 allows mₗ −2…+2, so <b>not possible</b>. (2, 1, 0, −½) = <b>2p</b>.</p>
+    <p class="sets">Sets: QS 2, 6, 7 · HW8 MCQ</p>
+  </div>
+  <div class="card" data-k="highest energy subshell increase in energy order filling 4s 3d transition">
+    <h3><span class="tag">P2</span>Which subshell is higher in energy</h3>
+    <p class="spot">"highest energy electron", "transition consistent with an increase in energy"</p>
+    <div class="f">1s 2s 2p 3s 3p 4s 3d 4p 5s 4d 5p 6s 4f 5d 6p 7s 5f 6d 7p</div>
+    <ol><li>Turn each set into a subshell name (P1).</li><li>Later in the fill order = higher energy.</li><li>"Increase in energy" = moving to a later subshell.</li></ol>
+    <p class="ex"><b>Ex:</b> 4s vs 3d: 3d comes later, so 4s → 3d is an <b>increase</b>.</p>
+    <p class="sets">Sets: QS 3, 4 · HW8 MCQ</p>
+  </div>
+  <div class="card" data-k="electron configuration which element has ground state noble gas core paramagnetic diamagnetic orbital diagram unpaired">
+    <h3><span class="tag">P3</span>Configuration of an atom</h3>
+    <p class="spot">"write the configuration", "which element has [Xe]6s²…", "unpaired electrons"</p>
+    <div class="f">fill order (P2); s holds 2, p 6, d 10, f 14</div>
+    <ol><li>Noble gas core in brackets, then keep filling from the next s.</li><li>Element from config: count the electrons (core + rest) = Z.</li><li>Unpaired: draw the boxes; one ↑ in each box before pairing (Hund).</li><li>Exceptions your professor uses: Cr = [Ar]4s¹3d⁵, Cu = [Ar]4s¹3d¹⁰ only.</li></ol>
+    <p class="ex"><b>Ex:</b> S (16): [Ne]3s²3p⁴ → p boxes ↑↓ ↑ ↑ → <b>2 unpaired</b>, paramagnetic.</p>
+    <p class="sets">Sets: QS 5 · HW9 13</p>
+  </div>
+  <div class="card" data-k="last electron added quantum numbers table identify element number of electrons expected for quantum set dashes">
+    <h3><span class="tag">P4</span>Last electron's quantum numbers / count electrons</h3>
+    <p class="spot">table: element → (n, l, mₗ, mₛ) of the last electron, or a set with "--" → how many electrons</p>
+    <div class="f">boxes labeled mₗ = −l … +l, left to right; fill ↑ (+½) in every box first, then ↓ (−½)</div>
+    <ol><li>Write the config; the last subshell gives n and l.</li><li>Draw its boxes, fill electrons in order, find which box the last one lands in and its arrow.</li><li>Reverse (numbers → element): that box tells you how many electrons are in the subshell → count Z.</li><li>Counting: list every real subshell (1s…7p) that fits the fixed numbers, count orbitals, × 2 (or × 1 if mₛ is fixed).</li></ol>
+    <p class="ex"><b>Ex:</b> Fe [Ar]4s²3d⁶: 5 ↑ in boxes −2…+2, the 6th is ↓ in −2 → <b>(3, 2, −2, −½)</b>. Set (2, --, --, +½): 2s + 2p = 4 orbitals × 1 = <b>4 electrons</b>.</p>
+    <p class="sets">Sets: Exam 1.4</p>
+  </div>
+  <div class="card" data-k="ions isoelectronic with kr 3d electrons fe3+ cation anion unpaired ions configuration">
+    <h3><span class="tag">P5</span>Ions</h3>
+    <p class="spot">a charge on the symbol; "isoelectronic with", "how many 3d electrons in Fe³⁺"</p>
+    <div class="f">electrons = Z − charge   (Fe³⁺: 26 − 3 = 23)</div>
+    <ol><li>Write the neutral atom first.</li><li>Anion: add electrons. Cation: remove from the highest n first, so 4s leaves before 3d.</li><li>Isoelectronic = same electron count.</li></ol>
+    <p class="ex"><b>Ex:</b> Fe [Ar]4s²3d⁶ → Fe²⁺ = [Ar]<b>3d⁶</b> (4s leaves first, not [Ar]4s²3d⁴).</p>
+    <p class="sets">Sets: HW9 11, 12, 13</p>
+  </div>
+  <div class="card" data-k="arrange order increasing radius ionic radius ionization energy electron affinity metallic character larger trend">
+    <h3><span class="tag">P6</span>Periodic trends</h3>
+    <p class="spot">"arrange in order of radius / IE / EA", "if X is bigger than Y then…"</p>
+    <div class="f"><div>radius: ↓ across a row, ↑ down a group</div><div>IE and |EA|: ↑ across, ↓ down (the opposite of radius)</div></div>
+    <ol><li>Different rows? The lower row (bigger n) is bigger.</li><li>Same row? More protons pulls harder → smaller.</li><li>Isoelectronic ions: more protons = smaller (K⁺ &lt; Cl⁻ &lt; S²⁻).</li><li>Bigger atom → lower IE, more metallic, smaller Zeff.</li></ol>
+    <p class="ex"><b>Ex:</b> Na, Mg, K by radius: Mg &lt; Na (same row, Mg has more protons) &lt; K (next row down).</p>
+    <p class="sets">Sets: HW9 14, 17, 19 · QS 1</p>
+  </div>
+  <div class="card" data-k="successive ionization energies i1 i2 i3 pattern graph unknown element jump second ionization">
+    <h3><span class="tag">P7</span>Successive ionization energies</h3>
+    <p class="spot">list or graph of I₁, I₂, I₃…; "which element"</p>
+    <div class="f">count the IEs before the huge jump = valence electrons = group</div>
+    <ol><li>Find the big jump (several times bigger).</li><li>Number before it = group (1, 2, 13 → 3, 14 → 4…).</li><li>Pick the answer in that group. I₂ of a group 1 metal is huge (core).</li></ol>
+    <p class="ex"><b>Ex:</b> 738, 1451, 7733 kJ/mol: jump after 2 → group 2 → <b>Mg</b>.</p>
+    <p class="sets">Sets: HW9 15, 16, 20</p>
+  </div>
+  <div class="card" data-k="heat of reaction kj required to produce ions gas ionization energy electron affinity carbon fluorine c4+ f- amount grams">
+    <h3><span class="tag">P8</span>ΔH from ionization energies and electron affinities</h3>
+    <p class="spot">a reaction of bare gas atoms/ions (F⁻, C⁴⁺…); "heat of reaction", "g needed to produce __ kJ"</p>
+    <div class="f"><div>remove an e⁻ from X → +IE     add an e⁻ to X → EA (table sign)</div><div>reverse a step → flip its sign</div></div>
+    <ol><li>For each species, list the electron steps (X⁻ → X is −EA; X → X⁺ is +I₁; X⁺ → X²⁺ is +I₂; X⁴⁺ → X³⁺ is −I₄…).</li><li>Add the steps; multiply by the coefficient.</li><li>ΔH (kJ per reaction as written). Grams: mol reactions = kJ wanted ÷ ΔH → × coefficient → × M.</li></ol>
+    <p class="ex"><b>Ex:</b> Na(g) + Cl(g) → Na⁺(g) + Cl⁻(g): ΔH = I₁(Na) + EA(Cl) = 496 + (−349) = <b>+147 kJ</b>. Values from table pages 4–5.</p>
+    <p class="sets">Sets: Exam 2.6</p>
+  </div>
+</div>
+</div>
+<div id="sheet-view" hidden>
+<div class="sheet">
+<h4>Exam III cheat sheet</h4>
+
+<div class="box"><b class="t">Always</b>
+<span class="m">h 6.626E-34 · c 3.00E8 · Nₐ 6.022E23</span>
+<span class="m">R_H 2.18E-18 J · mₑ 9.11E-31 kg</span>
+<span class="m">R 0.08206 · STP 1 mol = 22.4 L</span>
+nm → m ×10⁻⁹ · kJ → J ×1000 · °C +273.15 · mmHg ÷760 · km/s → m/s ×1000 · g → kg ÷1000
+<span class="w">Typed a×10^n with no ( ) → wrap every number in ( ) or use EE</span>
+<span class="w">Check size: photon E ~10⁻¹⁹ J, ν 10¹⁴–10¹⁶, visible λ 400–750 nm, 1 atom ~10⁻²⁶ kg</span>
+<span class="w">÷ by a power of 10 → subtract exponents</span>
+</div>
+
+<div class="box"><b class="t">G1 One gas</b><span class="s">one P, V, T; asks P, V, n, g, M, d</span>
+<span class="m">PV = nRT · M = g/n · d = PM/RT</span>
+Molecular formula: M ÷ M(empirical) = multiplier.
+<span class="w">O₂ = 32.00, not 16. °C in formula → K</span>
+</div>
+
+<div class="box"><b class="t">G2 Before → after</b><span class="s">"rises to", "heated to", bubble</span>
+<span class="m">P₁V₁/T₁ = P₂V₂/T₂</span>
+Cross out what stays the same. Kelvin.
+</div>
+
+<div class="box"><b class="t">G3 Mixtures</b><span class="s">% by volume, partial P, flasks opened</span>
+<span class="m">X = n_A/n_tot · P_A = X·P_tot</span>
+<span class="m">M_avg = ΣX·M → d = P·M_avg/RT</span>
+<span class="m">flasks: P = ΣPV / V_tot</span>
+</div>
+
+<div class="box"><b class="t">G4 Gas stoichiometry</b><span class="s">reaction + gas; L made, g needed, final P</span>
+<ol><li>given → mol (g÷M, M×L, PV/RT)</li><li>limiting? ratio → mol wanted</li><li>V = nRT/P or g = mol×M</li></ol>
+<span class="w">Final P forgot leftover excess → n = every gas left (incl. H₂O(g))</span>
+Sealed d = total g ÷ V. Mix of two fuels burned: x + y = n_total, C atoms: 1x + 3y = mol CO₂.
+</div>
+
+<div class="box"><b class="t">G5 Fuel + air</b><span class="s">"mole fraction O₂ in air"</span>
+<span class="m">C₈H₁₈ + 12.5 O₂ · C₆H₁₄ + 9.5 O₂</span>
+<span class="m">mol air = mol O₂ ÷ X(O₂)</span>
+mL × density → g → mol fuel. Backward: air × X ÷ coef.
+</div>
+
+<div class="box"><b class="t">G6 Over water</b><span class="s">"collected over / displacing water"</span>
+<span class="m">P_gas = P_atm − P_H₂O (table p. 4)</span>
+<span class="w">Plugged P_atm straight in → subtract water first</span>
+</div>
+
+<div class="box"><b class="t">G7 Gases react, P given</b><span class="s">sealed flask, const T, initial P's</span>
+atm acts like mol: limiting → before / change / after → add what's left.
+</div>
+
+<div class="box"><b class="t">G8 Manometer · KMT</b>
+Closed = h. Open: Hg higher on open side P_atm + h, on gas side P_atm − h. cm ×10 = mm.
+KMT: no volume · random, elastic · no forces · KE ∝ T. Same T → same KE; lighter = faster.
+</div>
+
+<div class="box"><b class="t">Ch 8 chain</b>
+<span class="m">λ ⟷ c=λν ⟷ ν ⟷ E=hν ⟷ ×Nₐ ⟷ /mol</span>
+<span class="m">E = hc/λ (one photon, J)</span>
+λ in m inside formulas; nm only at the end.
+</div>
+
+<div class="box"><b class="t">L1–L2 Photon</b><span class="s">"energy of a photon", "how many photons"</span>
+<span class="m"># photons = E_total (J) ÷ E_one</span>
+<span class="w">Answer left in m when asked nm → ×10⁹ last</span>
+</div>
+
+<div class="box"><b class="t">L3 Bond → longest λ</b><span class="s">"bond requires __ kJ/mol"</span>
+<span class="m">kJ/mol ×1000 ÷ Nₐ = J → λ = hc/E</span>
+</div>
+
+<div class="box"><b class="t">L4 Photoelectric</b><span class="s">threshold, binding energy, ejected e⁻ speed</span>
+<span class="m">φ = hc/λ − ½mₑv² · ν₀ = φ/h</span>
+φ per e⁻ ×Nₐ ÷1000 → kJ/mol
+<span class="w">KE 10× off → square v: ½(9.11E-31)(v)²</span>
+</div>
+
+<div class="box"><b class="t">L5 H-atom, n's given</b><span class="s">"falls from n = 7 to 4"</span>
+<span class="m">ΔE = −2.18E-18 (1/n_f² − 1/n_i²)</span>
+− = emitted, + = absorbed. λ = hc/|ΔE|, ν = |ΔE|/h.
+<span class="w">Exponent sign flipped → E ≤ 2.18×10⁻¹⁸</span>
+</div>
+
+<div class="box"><b class="t">L6 H-atom, find n_i</b><span class="s">λ given + final level</span>
+<span class="m">1/n_i² = 1/n_f² − E/2.18E-18</span>
+Two steps → add both photon E's.
+</div>
+
+<div class="box"><b class="t">L7 Light as heat</b><span class="s">laser melts ice, heats water, % efficient</span>
+<ol><li>ice: g÷18.02 × 6010 J · water: g × 4.184 × ΔT</li><li>÷ efficiency (0.635)</li><li>photons = q ÷ E_one; pulses = q ÷ (photons/pulse × E_one)</li></ol>
+</div>
+
+<div class="box"><b class="t">L8 de Broglie</b><span class="s">moving e⁻ / ion with m and v</span>
+<span class="m">λ = h/(m·v), m kg, v m/s</span>
+<span class="m">1 atom: (g/mol ÷1000) ÷ Nₐ</span>
+<span class="w">One atom ×Nₐ → ÷Nₐ · km→m ÷ → ×1000</span>
+</div>
+
+<div class="box"><b class="t">Ch 8 concepts</b>
+Brightness = # photons. Color = E per photon. Low → high E: radio, micro, IR, red…violet, UV, X, γ. Fall = emit.
+</div>
+
+<div class="box"><b class="t">P1 Quantum numbers</b><span class="s">"not possible", "represents a __ subshell"</span>
+n = shell: 1, 2, 3…<br>l = shape: 0 to n−1 (0 s, 1 p, 2 d, 3 f)<br>mₗ = box: −l … +l<br>mₛ = spin: +½ or −½
+<span class="m">(4, 1, …) → 4p · boxes = 2l+1 · 2 e⁻ per box</span>
+<span class="w">l = n (e.g. 2d) or |mₗ| > l → not possible</span>
+</div>
+
+<div class="box"><b class="t">P2 Fill / energy order</b>
+<span class="m">1s 2s 2p 3s 3p 4s 3d 4p 5s 4d 5p 6s 4f 5d 6p 7s 5f 6d 7p</span>
+Later = higher energy. Cr 4s¹3d⁵, Cu 4s¹3d¹⁰ only.
+</div>
+
+<div class="box"><b class="t">P3–P4 Configs + last e⁻</b><span class="s">"last electron added", "# electrons for set"</span>
+<ol><li>boxes mₗ −l → +l, left to right</li><li>all ↑ (+½) first, then ↓ (−½)</li><li>unpaired / para = any single ↑</li><li>count a set: real subshells 1s–7p that fit × 2 (× 1 if mₛ given)</li></ol>
+</div>
+
+<div class="box"><b class="t">P5 Ions</b><span class="s">Fe³⁺, isoelectronic, # 3d e⁻</span>
+<span class="m">e⁻ = Z − charge</span>
+Cation: remove highest n first (4s before 3d). Fe²⁺ = [Ar]3d⁶.
+</div>
+
+<div class="box"><b class="t">P6 Trends</b><span class="s">"arrange", "if X is larger than Y"</span>
+Radius: ↓ across, ↑ down. IE, |EA|, Zeff: opposite. Different row → n wins. Isoelectronic: more p⁺ = smaller. Bigger → more metallic, lower IE.
+</div>
+
+<div class="box"><b class="t">P7 Successive IE</b><span class="s">list or graph of I₁, I₂…</span>
+# before big jump = valence e⁻ = group.
+</div>
+
+<div class="box"><b class="t">P8 ΔH from IE / EA</b><span class="s">bare gas ions: F⁻, C⁴⁺ → …; "kJ", "g needed"</span>
+<span class="m">remove e⁻ +IE · add e⁻ to atom EA · reverse = flip sign</span>
+X⁻→X: −EA · X→X⁺: +I₁ · X⁴⁺→X³⁺: −I₄. × coefficients, add. g: kJ ÷ ΔH → × coef × M. Tables p. 4–5.
+</div>
+</div>
+</div>
+</div>
+<script>
+(function(){
+  var q=document.getElementById('q'), hint=document.getElementById('hint');
+  var cards=[].slice.call(document.querySelectorAll('.card'));
+  var stop={the:1,a:1,an:1,of:1,at:1,is:1,in:1,to:1,and:1,what:1,how:1,many:1,much:1,for:1,can:1,be:1,by:1,its:1,find:1,calculate:1,gas:1,x:1};
+  cards.forEach(function(c){ c._t=(c.getAttribute('data-k')+' '+c.textContent).toLowerCase(); });
+  function run(){
+    var words=q.value.toLowerCase().split(/[^a-z0-9%/.]+/).filter(function(w){return w.length>1&&!stop[w];});
+    var phrase=q.value.toLowerCase().trim();
+    var best=0;
+    cards.forEach(function(c){
+      var s=0; words.forEach(function(w){ if(c._t.indexOf(w)>-1) s+= (c.getAttribute('data-k').indexOf(w)>-1?2:1); });
+      if(phrase.length>4&&c.getAttribute('data-k').indexOf(phrase)>-1) s+=5;
+      c._s=s; if(s>best) best=s;
+    });
+    cards.forEach(function(c){
+      c.classList.remove('best');
+      c.hidden = words.length>0 && best>0 && c._s===0;
+      if(words.length && best>0 && c._s===best) c.classList.add('best');
+    });
+    document.querySelectorAll('.grid').forEach(function(g){
+      var any=[].some.call(g.children,function(c){return !c.hidden;});
+      g.hidden=!any; var h=g.previousElementSibling; if(h&&h.classList.contains('sec')) h.hidden=!any;
+    });
+    if(!words.length) hint.textContent='';
+    else if(best===0) hint.textContent='No match. Try other words from the problem, like what it gives you.';
+    else { var b=cards.filter(function(c){return c.classList.contains('best');}).map(function(c){return c.querySelector('h3').firstChild.textContent.trim();});
+      hint.textContent='Best match: '+b.join(', '); }
+  }
+  q.addEventListener('input',run);
+})();
+</script>
+<script>
+(function(){
+  var f=document.getElementById('finder-view'), sh=document.getElementById('sheet-view');
+  var tf=document.getElementById('tab-finder'), ts=document.getElementById('tab-sheet');
+  function show(which){ var isS=which==='sheet'; sh.hidden=!isS; f.hidden=isS; ts.setAttribute('aria-pressed',isS); tf.setAttribute('aria-pressed',!isS); }
+  tf.addEventListener('click',function(){ show('finder'); if(location.hash==='#sheet') location.hash='finder'; });
+  ts.addEventListener('click',function(){ show('sheet'); location.hash='sheet'; });
+  function fromHash(){ show(location.hash==='#sheet'?'sheet':'finder'); }
+  window.addEventListener('hashchange',fromHash); fromHash();
+})();
+</script>
+<script>
+(function(){
+  var X={"Always": "Every formula wants SI-style units: λ in m, mass in kg, energy in J, T in K, P in atm (for R = 0.08206). Convert first, then plug in. Calculator: 6.022×10²³ typed as 6.022 × 10 ^ 23 without parentheses gets split, so the calculator multiplies by 10²³ when you meant to divide. Wrap each number in ( ) or use EE. After you get an answer, check that its size makes sense. A photon at 10⁶¹ m or an atom weighing 0.02 kg means a typing error.", "G1 One gas": "Use this when the gas sits still in one set of conditions. PV = nRT links all four. Solve for the unknown with letters first (n = PV/RT), then plug in. Molar mass: find n with PV/RT, then M = grams ÷ n. Density: d = PM/RT (comes from substituting n = g/M). Ex: 2.00 g O₂ at 25 °C and 1.00 atm: n = 0.0625 mol, V = 0.0625 × 0.08206 × 298.15 ÷ 1.00 = 1.53 L. Molecular formula: M(gas) ÷ M(empirical) gives the multiplier, e.g. 56 ÷ 14 (CH₂) = 4, so C₄H₈.", "G2 Before → after": "The same gas changes conditions, so n stays the same and nR cancels out of PV/T on both sides. Cross out whatever is held constant. Ex: 1.0 L at 1.0 atm and 300 K goes to 2.0 atm and 400 K. V₂ = P₁V₁T₂ ÷ (T₁P₂) = 0.67 L. Direction check: pressure doubled shrinks V, heating grows it a bit, so the net is smaller. T must be in K, because °C ratios are meaningless (0 °C isn't zero energy).", "G3 Mixtures": "Each gas acts like it's alone. Mole fraction X = its share of the moles, and its partial pressure is that share of the total. '% by volume' is the same as mole fraction. Mixture density: average molar mass weighted by X, then d = PM/RT. Flasks opened: each gas spreads into the total volume, so total P = (P₁V₁ + P₂V₂ + …) ÷ V_total. The answer must land between the lowest and highest starting pressure.", "G4 Gas stoichiometry": "Coefficients are mole ratios, so everything goes through moles. Get mol of what you're given (g ÷ M, molarity × L, or PV/RT for a gas). If two amounts are given, find the limiting one (whichever makes less product). Then use the ratio to get mol of what you want, then convert out (V = nRT/P or g = mol × M). Final pressure in a sealed tank: add up the moles of every gas there after the reaction, including leftover excess reactant and H₂O(g), then P = nRT/V. Two fuels burned (CH₄ + C₃H₈): let x and y be their moles. x + y = n_total (from PV/RT), and carbons: 1x + 3y = mol CO₂. Solve the two equations.", "G5 Fuel + air": "Air is only about 21% O₂, so you need more air than O₂: mol air = mol O₂ ÷ X(O₂). Chain: mL fuel × density = g → ÷ M = mol fuel → × 12.5 (octane) = mol O₂ → ÷ 0.2095 = mol air → V = nRT/P. To balance: CₓHᵧ needs x O₂ for the CO₂ plus y/4 O₂ for the water. Octane: 8 + 18/4 = 12.5. Hexane: 6 + 14/4 = 9.5. Backward (air given, find fuel): run the same chain in reverse.", "G6 Over water": "Gas bubbled through water picks up water vapor, so the measured pressure is your gas plus water vapor. Subtract the water's vapor pressure (from the table, at that temperature) to get just your gas, then use PV = nRT. Ex: 760 mmHg total at 25 °C (water 23.8): P_gas = 736.2 mmHg ÷ 760 = 0.969 atm. Your professor treats 'over HCl(aq)' and other aqueous solutions the same way.", "G7 Gases react, P given": "With T and V fixed, P is proportional to n, so you can use atm in place of moles in the coefficient ratios. Ex: A + 2B → C with 2.00 atm each. B runs out first (it needs twice as much). B uses 2.00, A uses 1.00, C makes 1.00. Left: A 1.00 + C 1.00 = 2.00 atm. The flask volume isn't needed.", "G8 Manometer · KMT": "Manometer: the mercury gets pushed away from the side with more pressure. Closed tube (vacuum on top): the gas alone holds up the column, so P = h. Open tube: compare with the atmosphere. If the mercury is pushed up the open side, the gas is stronger: P_atm + h. If it's pushed up the gas side, the gas is weaker: P_atm − h. KMT: all gases at the same T have the same average KE, so lighter molecules must move faster (KE = ½mv²). Ideal gas assumptions: molecules take up no volume, have no attractions, move randomly with elastic collisions, and average KE ∝ T in kelvin.", "Ch 8 chain": "Every light problem gives you one of λ, ν or E and asks for another. c = λν links wavelength and frequency (all light moves at c). E = hν links frequency to the energy of one photon. × Nₐ scales one photon up to a mole. Find your start and end on the chain and walk through it. Longer λ means lower ν and lower E.", "L1–L2 Photon": "E = hc/λ is the energy of ONE photon. To count photons in a flash: total energy (in J) ÷ energy of one photon. Ex: 400 nm → 4.97×10⁻¹⁹ J per photon. 1.00 J ÷ 4.97×10⁻¹⁹ = 2.01×10¹⁸ photons. A mole of visible photons is ~150–300 kJ, which makes a good sanity check.", "L3 Bond → longest λ": "One photon breaks one bond, so it needs at least the energy of ONE bond. Tables give kJ per mole of bonds, so × 1000 (to J) and ÷ Nₐ (to one bond). Then λ = hc/E. It's the 'longest' λ because longer λ means a weaker photon, and this is the weakest one that still works. Ex: 400 kJ/mol → 6.64×10⁻¹⁹ J → 299 nm.", "L4 Photoelectric": "The photon's energy pays the binding energy φ (the 'exit fee'), and whatever is left becomes the electron's kinetic energy: hc/λ = φ + ½mv². Electron mass is 9.11×10⁻³¹ kg. Square v before multiplying. Threshold frequency: the photon has just enough energy and KE = 0, so φ = hν₀. φ comes out per electron in J. × Nₐ ÷ 1000 gives kJ/mol. Brighter light means more photons, not stronger ones, so it never changes whether electrons come off.", "L5 H-atom, n's given": "Each level in hydrogen has energy −2.18×10⁻¹⁸/n² J. It's negative because the electron is bound, and 0 means free. ΔE = final − initial. Falling to lower n gives negative ΔE: energy leaves as a photon (emitted). Going up gives positive ΔE (absorbed). The photon's energy is the size of ΔE. Then λ = hc/|ΔE| or ν = |ΔE|/h. Ex: 3 → 2 gives 656 nm (red line).", "L6 H-atom, find n_i": "Same equation, solved for the starting level. Photon energy E = hc/λ. Then 1/n_i² = 1/n_f² − E/2.18×10⁻¹⁸. Take 1 ÷ that, then √, and you should land near a whole number. If the electron falls in two steps, the total drop is the sum of both photon energies, so add them and use the final level. Ex: a 434 nm photon ending at n = 2 → n_i = 5.", "L7 Light as heat": "First find how much heat the job needs, in J. Melting ice: mol × 6010 J/mol. Warming water: g × 4.184 × ΔT. If the device is only 63.5% efficient, you need more light: q ÷ 0.635. Then photons = J needed ÷ J per photon (hc/λ). Pulses = J needed ÷ J per pulse, where J per pulse = photons per pulse × J per photon. The answer is a count, so it must be a normal-size number.", "L8 de Broglie": "Anything moving has a wavelength λ = h/(mv). More momentum means a shorter wave. m must be in kg and v in m/s. For one atom or ion: molar mass g/mol ÷ 1000 gives kg/mol, then ÷ Nₐ gives kg for one atom (~10⁻²⁶ kg). Divide, because you're splitting a mole's mass into single atoms. km/s × 1000 = m/s. Electrons come out ~10⁻¹⁰ m, atoms ~10⁻¹³ m.", "Ch 8 concepts": "Brightness (amplitude) = how many photons. Color (λ) = energy of each photon. Spectrum from low to high energy: radio, microwave, infrared, visible (red to violet), UV, X-ray, gamma. Emission = the electron falls and gives off light (bright lines). Absorption = it jumps up and takes light in (dark lines). An element absorbs and emits at the same λ. Uncertainty: you can't know an electron's exact position and speed at the same time.", "P1 Quantum numbers": "The four numbers are an electron's address, and each is limited by the one before it. n = shell (1, 2, 3…). l = shape, from 0 to n−1 (0 s, 1 p, 2 d, 3 f), so shell 2 has s and p but no d. mₗ = which box, from −l to +l (p has −1, 0, +1, which is 3 boxes). mₛ = spin, +½ or −½. 'Not possible' means some number breaks its rule: l = n, |mₗ| > l, or mₛ not ±½. Subshell name = n plus the letter for l: (4, 1, …) = 4p.", "P2 Fill / energy order": "Electrons fill the lowest-energy subshell first, in this order (read it off the periodic table rows: s block, then d one shell back, then p). 4s fills before 3d because 4s is slightly lower in energy for a neutral atom. Higher energy = later in the list. 'Increase in energy' means going to a later subshell (e.g. 4s → 3d). Your professor only uses Cr and Cu as exceptions (half-filled and full d is extra stable).", "P3–P4 Configs + last e⁻": "Write the configuration, then draw the boxes for the last subshell, labeled mₗ from −l to +l. Put one ↑ (+½) in each box left to right first (Hund's rule), then go back and add ↓ (−½). Wherever the last electron lands gives its mₗ and mₛ. Ex: Fe 3d⁶: five ↑ fill −2…+2, and the 6th is ↓ in box −2 → (3, 2, −2, −½). Counting electrons for a set with blanks: list every real subshell that fits, count the boxes allowed, × 2 (or × 1 if mₛ is fixed). Unpaired = boxes with a single arrow. Any unpaired → paramagnetic.", "P5 Ions": "Electrons = Z − charge (a negative charge adds electrons). Write the neutral atom first. For cations, remove from the highest n first, so 4s electrons leave before 3d even though 4s filled first. Ex: Fe [Ar]4s²3d⁶ → Fe³⁺ [Ar]3d⁵ (5 d electrons, all unpaired). Isoelectronic = same number of electrons (Kr = 36: Br⁻, Rb⁺, Sr²⁺, Se²⁻ all have 36).", "P6 Trends": "Two causes. (1) A higher shell n is farther out: bigger and easier to remove, which wins first. (2) In the same row, more protons with the same shielding (higher Zeff) pull tighter: smaller, harder to remove. So radius shrinks across a row and grows down a group. Ionization energy and electron affinity size go the opposite way. Isoelectronic ions: same electrons, so more protons pull them in tighter (P³⁻ > S²⁻ > Cl⁻ > K⁺). Bigger atoms lose electrons easily, so they're more metallic.", "P7 Successive IE": "Pulling off valence electrons costs a gradually increasing amount. The first core electron (one shell closer in) costs hugely more. So count the electrons removed before the big jump: that's the number of valence electrons, which gives the group. Ex: 590, 1145, 4900 → jump after 2 → group 2 (Ca). For Mg, I₂ > I₁ (removing from a + ion is harder), but Mg's I₂ < Na's I₂ (Na's 2nd electron is core).", "P8 ΔH from IE / EA": "Break the reaction into single-electron steps and add their energies. Removing an electron costs its ionization energy (+IE). Adding an electron to a neutral atom releases its electron affinity (use the table's sign, usually negative). Running a step backward flips the sign: X⁻ → X is −EA, and C⁴⁺ → C³⁺ is −I₄ (adding an electron back releases what removing it cost). Multiply by coefficients and add. Grams needed for some kJ: kJ wanted ÷ ΔH = mol of reaction, × coefficient = mol of that species, × M = g."};
+  document.querySelectorAll('#sheet-view .box').forEach(function(b){
+    var t=b.querySelector('b.t'); if(!t) return; var txt=X[t.textContent.trim()]; if(!txt) return;
+    var h=document.createElement('span'); h.className='hint'; h.textContent='explain'; t.prepend(h);
+    var d=document.createElement('span'); d.className='exp'; d.textContent=txt; d.hidden=true; b.appendChild(d);
+    b.tabIndex=0; b.setAttribute('role','button'); b.setAttribute('aria-expanded','false');
+    function tog(){ d.hidden=!d.hidden; b.setAttribute('aria-expanded',String(!d.hidden)); h.textContent=d.hidden?'explain':'hide'; }
+    b.addEventListener('click',tog);
+    b.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); tog(); } });
+  });
+})();
+</script>
+</body>
+</html>
