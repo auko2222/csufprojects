@@ -104,7 +104,7 @@ table.hw9 td:first-child { font-family: var(--mono); }
 table.hw9 td:nth-child(2) { font-family: var(--mono); font-weight: 600; color: var(--accent); }
 table.hw9 td:nth-child(4) { font-family: var(--sans); font-weight: 400; white-space: normal; }
 table.hw9 td:nth-child(3) { white-space: nowrap; }
-.paper { width: 8.5in; height: 11in; box-sizing: border-box; padding: 0.35in; background: #fffef8; color: #1d2433; border: 1px solid var(--line); box-shadow: 0 2px 10px rgba(0,0,0,.12); display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr auto; gap: 0 0.12in; font-family: "Patrick Hand", "Comic Sans MS", cursive, sans-serif; font-size: 14.5px; line-height: 1.22; margin: 0 auto; }
+.paper { width: 8.5in; height: 11in; box-sizing: border-box; padding: 0.35in; background: #fffef8; color: #1d2433; border: 1px solid var(--line); box-shadow: 0 2px 10px rgba(0,0,0,.12); display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr auto; gap: 0 0.12in; font-family: "Patrick Hand", "Comic Sans MS", cursive, sans-serif; font-size: 13.5px; line-height: 1.2; margin: 0 auto; overflow: hidden; }
 .pcol { display: flex; flex-direction: column; gap: 6px; border-right: 1px dashed #b9c0cc; padding-right: 0.1in; min-width: 0; }
 .pcol:nth-child(3) { border-right: 0; padding-right: 0; }
 .pb { border: 1.2px solid #4a5568; border-radius: 3px; padding: 3px 5px; flex: 1 1 auto; }
@@ -112,6 +112,8 @@ table.hw9 td:nth-child(3) { white-space: nowrap; }
 .pb.big { flex-grow: 1.6; }
 .pstrip { grid-column: 1 / -1; margin-top: 8px; border: 1.6px solid #a2471d; color: #a2471d; padding: 6px 8px; border-radius: 3px; }
 .pstrip b { color: #a2471d; }
+.pb .sep { display: block; border-top: 1.2px dashed #8a94a6; margin-top: 3px; padding-top: 2px; }
+.pb i { color: #5b6472; }
 .diag { display: block; width: 62%; height: auto; margin: 2px auto; font-family: inherit; }
 .pstrip ul { margin: 2px 0 0; padding-left: 16px; columns: 3; column-gap: 14px; }
 .pstrip li { break-inside: avoid; }
@@ -572,33 +574,33 @@ X⁻→X: −EA · X→X⁺: +I₁ · X⁴⁺→X³⁺: −I₄. × coefficients
 <div id="paper-view" hidden>
 <div class="scroll"><div class="paper">
 <div class="pcol">
-<div class="pb"><b>PV = nRT</b><br>M = g/n · d = PM/RT<br>mol. formula: M ÷ M(emp)</div>
-<div class="pb"><b>Before → after</b><br>P₁V₁/T₁ = P₂V₂/T₂ (K!)</div>
-<div class="pb"><b>Mixtures</b> (3 separate tools)<br><i>asks partial P:</i> X = n/n_tot → P_A = X·P_tot<br><i>asks mixture d (% by vol):</i> M_avg = ΣX·M → d = P·M_avg/RT<br><i>asks P after flasks open:</i> P = ΣPV / V_tot</div>
-<div class="pb"><b>Stoich</b><br>g→mol→ratio→mol→V = nRT/P<br>limiting first<br><u>final P = ALL gases left</u> (excess + H₂O(g))<br>sealed d = total g / V<br>2 fuels: x + y = n, x + 3y = mol CO₂</div>
-<div class="pb"><b>Air</b><br>C₈H₁₈ + 12.5 O₂ · C₆H₁₄ + 9.5 O₂<br>air = O₂ ÷ X · mL × density → g<br>backward: air × X ÷ 12.5 × 114.23 ÷ dens.</div>
-<div class="pb"><b>Over water</b><br>P_gas = P_atm − P_H₂O (table)</div>
-<div class="pb"><b>Gases react (const T, V)</b><br>atm = mol → before / change / after</div>
-<div class="pb"><b>Ideal gas assumptions</b><br>① no volume ② no attractions<br>③ random, elastic collisions ④ KE ∝ T(K)<br>Manometer: closed P = h · open P_atm ± h<br>(+ if Hg pushed up open side) · cm×10 = mm</div>
+<div class="pb"><b>PV = nRT</b><span class="sep"><i>asks P, V, n, T:</i> PV = nRT</span><span class="sep"><i>asks M:</i> n = PV/RT → M = g/n</span><span class="sep"><i>asks d:</i> d = PM/RT</span><span class="sep"><i>asks molecular formula:</i> M ÷ M(emp)</span></div>
+<div class="pb"><b>Before → after</b><br>P₁V₁/T₁ = P₂V₂/T₂ (K!) · cross out constants</div>
+<div class="pb"><b>Mixtures</b><span class="sep"><i>asks partial P:</i> X = n/n_tot → P_A = X·P_tot</span><span class="sep"><i>asks mixture d (% vol):</i> M_avg = ΣX·M → d = P·M_avg/RT</span><span class="sep"><i>asks P after flasks open:</i> P = ΣPV / V_tot</span></div>
+<div class="pb"><b>Stoich</b><br>① given → mol ② limiting? ③ ratio → mol wanted ④ V = nRT/P or g = mol×M<span class="sep"><i>asks final P:</i> n = <u>ALL gases left</u> (excess + H₂O(g)) → P = nRT/V</span><span class="sep"><i>asks sealed d:</i> total g ÷ V</span><span class="sep"><i>2 fuels → X:</i> x + y = n, x + 3y = mol CO₂</span></div>
+<div class="pb"><b>Air</b><br>① mL × dens → g → mol fuel ② × 12.5 (C₈H₁₈) / 9.5 (C₆H₁₄) → O₂ ③ ÷ X → mol air ④ V = nRT/P<span class="sep"><i>given air, asks fuel:</i> air × X ÷ 12.5 × 114.23 ÷ dens</span></div>
+<div class="pb"><b>Over water</b><br>① P_gas = P_atm − P_H₂O (table) ② ÷ 760 ③ n = PV/RT → stoich</div>
+<div class="pb"><b>Gases react (const T, V)</b><br>① limiting, using atm as mol ② before / change / after ③ add what's left</div>
+<div class="pb"><b>Gas concepts</b><span class="sep"><i>asks assumptions:</i> ① no volume ② no attractions ③ random, elastic ④ KE ∝ T(K)</span><span class="sep"><i>manometer:</i> closed P = h · open P_atm ± h (+ if Hg up open side) · cm×10</span></div>
 </div>
 <div class="pcol">
-<div class="pb"><b>Chain</b><br>λ ↔ c = λν ↔ ν ↔ E = hν ↔ ×Nₐ ↔ /mol<br>E = hc/λ · λ in <u>m</u></div>
-<div class="pb"><b>Photons</b><br># = E_tot (J) ÷ E_one</div>
-<div class="pb"><b>Bond → longest λ</b><br>kJ/mol × 1000 ÷ Nₐ → λ = hc/E</div>
-<div class="pb"><b>Photoelectric</b><br>φ = hc/λ − ½ mₑ v²<br>ν₀ = φ/h · ×Nₐ ÷ 1000 → kJ/mol</div>
-<div class="pb big"><b>H-atom</b><br>ΔE = −2.18E-18 (1/n_f² − 1/n_i²)<br>− = emit, + = absorb<br>λ = hc/|ΔE| · ν = |ΔE|/h</div>
-<div class="pb"><b>Find n_i</b><br>1/n_i² = 1/n_f² − E/2.18E-18<br>2 steps: add E's</div>
-<div class="pb"><b>Light → heat</b><br>ice: g/18.02 × 6010 J<br>water: g × 4.184 × ΔT<br>÷ eff · pulses = q ÷ (photons × E_one)</div>
-<div class="pb"><b>de Broglie</b><br>λ = h/mv (kg, m/s)<br>1 atom: (g/mol ÷ 1000) ÷ Nₐ</div>
+<div class="pb"><b>Chain</b><br>λ ↔ c = λν ↔ ν ↔ E = hν ↔ ×Nₐ ↔ /mol · E = hc/λ · λ in <u>m</u></div>
+<div class="pb"><b>Photons</b><br>① E_one = hc/λ ② # = E_tot (J) ÷ E_one<span class="sep"><i>asks per mole:</i> E_one × Nₐ</span></div>
+<div class="pb"><b>Bond → longest λ</b><br>① kJ/mol × 1000 ÷ Nₐ ② λ = hc/E ③ × 10⁹ for nm</div>
+<div class="pb"><b>Photoelectric</b><span class="sep"><i>λ + e⁻ speed → φ:</i> ① hc/λ ② − ½mₑv² ③ × Nₐ ÷ 1000</span><span class="sep"><i>threshold ν₀ ↔ φ:</i> φ = hν₀</span></div>
+<div class="pb big"><b>H-atom</b><br>① ΔE = −2.18E-18 (1/n_f² − 1/n_i²)<br>② sign: − = emit, + = absorb<br>③ λ = hc/|ΔE| · or ν = |ΔE|/h</div>
+<div class="pb"><b>Find n_i</b><br>① E = hc/λ (2 steps: add E's) ② 1/n_i² = 1/n_f² − E/2.18E-18 ③ n = 1/√</div>
+<div class="pb"><b>Light → heat</b><br>① q: ice g/18.02 × 6010 · water g × 4.184 × ΔT ② ÷ eff ③ E_one = hc/λ ④ photons = q ÷ E_one → pulses = photons ÷ per pulse</div>
+<div class="pb"><b>de Broglie</b><br>① m in kg (1 atom: g/mol ÷ 1000 ÷ Nₐ) ② v in m/s ③ λ = h/mv</div>
 </div>
 <div class="pcol">
-<div class="pb"><b>QN</b><br>n = 1, 2… · l = 0…n−1 (s p d f)<br>mₗ = −l…+l · mₛ ±½ · (4,1) = 4p</div>
-<div class="pb"><b>Fill order</b> (diagonal rule: follow arrows top→down)<br><svg class="diag" viewBox="0 0 138 123" role="img" aria-label="Diagonal rule for orbital filling order"><defs><marker id="ah" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#a2471d"/></marker></defs><g stroke="#a2471d" stroke-width="1" opacity=".75"><line x1="24" y1="4" x2="6" y2="17" marker-end="url(#ah)"/><line x1="24" y1="21" x2="6" y2="34" marker-end="url(#ah)"/><line x1="58" y1="21" x2="6" y2="51" marker-end="url(#ah)"/><line x1="58" y1="38" x2="6" y2="68" marker-end="url(#ah)"/><line x1="92" y1="38" x2="6" y2="85" marker-end="url(#ah)"/><line x1="92" y1="55" x2="6" y2="102" marker-end="url(#ah)"/><line x1="126" y1="55" x2="6" y2="119" marker-end="url(#ah)"/><line x1="126" y1="72" x2="40" y2="119" marker-end="url(#ah)"/></g><g fill="#1d2433" text-anchor="middle" font-size="12.5" stroke="#fffef8" stroke-width="4" paint-order="stroke" stroke-linejoin="round"><text x="14" y="13">1s</text><text x="14" y="30">2s</text><text x="48" y="30">2p</text><text x="14" y="47">3s</text><text x="48" y="47">3p</text><text x="82" y="47">3d</text><text x="14" y="64">4s</text><text x="48" y="64">4p</text><text x="82" y="64">4d</text><text x="116" y="64">4f</text><text x="14" y="81">5s</text><text x="48" y="81">5p</text><text x="82" y="81">5d</text><text x="116" y="81">5f</text><text x="14" y="98">6s</text><text x="48" y="98">6p</text><text x="82" y="98">6d</text><text x="14" y="115">7s</text><text x="48" y="115">7p</text></g></svg><br>1s 2s 2p 3s 3p 4s 3d 4p 5s 4d 5p 6s 4f 5d 6p · Cr, Cu exceptions</div>
-<div class="pb"><b>Last e⁻</b><br>boxes −l → +l, all ↑ first, then ↓<br>count set: subshells × boxes × 2<br>reverse: QN → box → # e⁻ → Z<br>unpaired = single ↑</div>
-<div class="pb"><b>Ions</b><br>e⁻ = Z − charge · 4s leaves before 3d</div>
-<div class="pb"><b>Trends</b><br>radius ↓ across, ↑ down · IE opposite<br>isoelectronic: more p⁺ = smaller</div>
+<div class="pb"><b>QN</b><br>n = 1, 2… · l = 0…n−1 (s p d f) · mₗ = −l…+l · mₛ ±½<span class="sep"><i>asks subshell:</i> (4, 1) = 4p</span><span class="sep"><i>asks not possible:</i> l = n, or |mₗ| > l</span></div>
+<div class="pb"><b>Fill order</b> (diagonal rule)<br><svg class="diag" viewBox="0 0 138 123" role="img" aria-label="Diagonal rule for orbital filling order"><defs><marker id="ah" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#a2471d"/></marker></defs><g stroke="#a2471d" stroke-width="1" opacity=".75"><line x1="24" y1="4" x2="6" y2="17" marker-end="url(#ah)"/><line x1="24" y1="21" x2="6" y2="34" marker-end="url(#ah)"/><line x1="58" y1="21" x2="6" y2="51" marker-end="url(#ah)"/><line x1="58" y1="38" x2="6" y2="68" marker-end="url(#ah)"/><line x1="92" y1="38" x2="6" y2="85" marker-end="url(#ah)"/><line x1="92" y1="55" x2="6" y2="102" marker-end="url(#ah)"/><line x1="126" y1="55" x2="6" y2="119" marker-end="url(#ah)"/><line x1="126" y1="72" x2="40" y2="119" marker-end="url(#ah)"/></g><g fill="#1d2433" text-anchor="middle" font-size="12.5" stroke="#fffef8" stroke-width="4" paint-order="stroke" stroke-linejoin="round"><text x="14" y="13">1s</text><text x="14" y="30">2s</text><text x="48" y="30">2p</text><text x="14" y="47">3s</text><text x="48" y="47">3p</text><text x="82" y="47">3d</text><text x="14" y="64">4s</text><text x="48" y="64">4p</text><text x="82" y="64">4d</text><text x="116" y="64">4f</text><text x="14" y="81">5s</text><text x="48" y="81">5p</text><text x="82" y="81">5d</text><text x="116" y="81">5f</text><text x="14" y="98">6s</text><text x="48" y="98">6p</text><text x="82" y="98">6d</text><text x="14" y="115">7s</text><text x="48" y="115">7p</text></g></svg><br>1s 2s 2p 3s 3p 4s 3d 4p 5s 4d 5p 6s 4f 5d 6p · Cr, Cu</div>
+<div class="pb"><b>Last e⁻</b><span class="sep"><i>asks QN of last e⁻:</i> ① config ② boxes −l → +l ③ all ↑ first, then ↓</span><span class="sep"><i>QN → element:</i> box → # e⁻ in subshell → Z</span><span class="sep"><i># e⁻ for a set:</i> subshells (1s–7p, no g) × boxes × 2</span><span class="sep"><i>unpaired:</i> single ↑</span></div>
+<div class="pb"><b>Ions</b><span class="sep"><i>asks config:</i> ① neutral first ② remove 4s before 3d</span><span class="sep"><i>isoelectronic:</i> e⁻ = Z − charge</span></div>
+<div class="pb"><b>Trends</b><span class="sep"><i>rank atoms:</i> radius ↓ across, ↑ down · IE opposite</span><span class="sep"><i>rank ions (same e⁻):</i> more p⁺ = smaller</span></div>
 <div class="pb"><b>IE jump</b><br># before jump = group</div>
-<div class="pb big"><b>ΔH from IE / EA</b><br>remove e⁻ +IE · add e⁻ EA · reverse = flip<br>X⁻→X: −EA · X→X⁺: +I₁ · X⁺→X²⁺: +I₂<br>X⁴⁺→X³⁺: −I₄ · X³⁺→X²⁺: −I₃<br>× coef, add · g: kJ ÷ ΔH × coef × M</div>
+<div class="pb big"><b>ΔH from IE / EA</b><br>① each species → steps: X⁻→X −EA · X→X⁺ +I₁ · X⁺→X²⁺ +I₂ · X⁴⁺→X³⁺ −I₄ · X³⁺→X²⁺ −I₃ ② × coef, add<span class="sep"><i>asks g:</i> kJ ÷ ΔH × coef × M</span></div>
 </div>
 <div class="pstrip"><b>MY SLIPS → FIX</b>
 <ul><li>typed a×10^n, no ( ) → ( ) or EE</li><li>10⁻¹⁸ wrote 10¹⁸ → photon ~10⁻¹⁹ J, ν 10¹⁴–10¹⁶</li><li>÷ powers: added exp → SUBTRACT</li><li>1 atom: ×Nₐ → ÷Nₐ (~10⁻²⁶ kg)</li><li>km→m ÷1000 → ×1000</li><li>KE 10× off → (v)² first</li><li>answer in m, asked nm → ×10⁹ last</li><li>−15 °C → 288 → +273.15 = 258</li><li>rounded mol early → keep all digits</li><li>added used reactant → LEFTOVER only</li><li>O₂ = 16 → O₂ = 32.00</li><li>mixed conversions into fraction → 1 per line</li></ul></div>
