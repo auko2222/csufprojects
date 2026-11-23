@@ -104,7 +104,7 @@ table.hw9 td:first-child { font-family: var(--mono); }
 table.hw9 td:nth-child(2) { font-family: var(--mono); font-weight: 600; color: var(--accent); }
 table.hw9 td:nth-child(4) { font-family: var(--sans); font-weight: 400; white-space: normal; }
 table.hw9 td:nth-child(3) { white-space: nowrap; }
-.paper { width: 8.5in; height: 11in; box-sizing: border-box; padding: 0.35in; background: #fffef8; color: #1d2433; border: 1px solid var(--line); box-shadow: 0 2px 10px rgba(0,0,0,.12); display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr auto; gap: 0 0.12in; font-family: "Patrick Hand", "Comic Sans MS", cursive, sans-serif; font-size: 13.5px; line-height: 1.2; margin: 0 auto; overflow: hidden; }
+.paper { width: 8.5in; height: 11in; box-sizing: border-box; padding: 0.35in; background: #fffef8; color: #1d2433; border: 1px solid var(--line); box-shadow: 0 2px 10px rgba(0,0,0,.12); display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr auto; gap: 0 0.12in; font-family: "Patrick Hand", "Comic Sans MS", cursive, sans-serif; font-size: 12.6px; line-height: 1.2; margin: 0 auto; overflow: hidden; }
 .pcol { display: flex; flex-direction: column; gap: 6px; border-right: 1px dashed #b9c0cc; padding-right: 0.1in; min-width: 0; }
 .pcol:nth-child(3) { border-right: 0; padding-right: 0; }
 .pb { border: 1.2px solid #4a5568; border-radius: 3px; padding: 3px 5px; flex: 1 1 auto; }
@@ -577,19 +577,19 @@ X⁻→X: −EA · X→X⁺: +I₁ · X⁴⁺→X³⁺: −I₄. × coefficients
 <div class="pb"><b>PV = nRT</b><span class="sep"><i>asks P, V, n, T:</i> PV = nRT</span><span class="sep"><i>asks M:</i> n = PV/RT → M = g/n</span><span class="sep"><i>asks d:</i> d = PM/RT</span><span class="sep"><i>asks molecular formula:</i> M ÷ M(emp)</span></div>
 <div class="pb"><b>Before → after</b><br>P₁V₁/T₁ = P₂V₂/T₂ (K!) · cross out constants</div>
 <div class="pb"><b>Mixtures</b><span class="sep"><i>asks partial P:</i> X = n/n_tot → P_A = X·P_tot</span><span class="sep"><i>asks mixture d (% vol):</i> M_avg = X₁M₁ + X₂M₂ + … → d = P·M_avg/RT</span><span class="sep"><i>asks P after flasks open:</i> P_final = (P₁V₁ + P₂V₂ + …) ÷ (V₁ + V₂ + …)</span></div>
-<div class="pb"><b>Stoich</b><br>① given → mol ② limiting? ③ ratio → mol wanted ④ V = nRT/P or g = mol×M<span class="sep"><i>asks final P:</i> n = <u>ALL gases left</u> (excess + H₂O(g)) → P = nRT/V</span><span class="sep"><i>asks sealed d:</i> total g ÷ V</span><span class="sep"><i>2 fuels → X:</i> x + y = n, x + 3y = mol CO₂</span></div>
+<div class="pb"><b>Stoich</b><br>① given → mol ② 2 amounts given? find limiting (makes less product) ③ × coef ratio → mol wanted ④ V = nRT/P or g = mol×M<span class="sep"><i>asks final P:</i> n = <u>ALL gases left</u> (excess + H₂O(g)) → P = nRT/V</span><span class="sep"><i>asks sealed d:</i> total g ÷ V</span><span class="sep"><i>2 fuels → X:</i> x + y = n, x + 3y = mol CO₂</span></div>
 <div class="pb"><b>Air</b><br>① mL × dens → g → mol fuel ② × 12.5 (C₈H₁₈) / 9.5 (C₆H₁₄) → O₂ ③ ÷ X → mol air ④ V = nRT/P<span class="sep"><i>given air, asks fuel:</i> air × X ÷ 12.5 × 114.23 ÷ dens</span></div>
 <div class="pb"><b>Over water</b><br>① P_gas = P_atm − P_H₂O (table) ② ÷ 760 ③ n = PV/RT → stoich</div>
-<div class="pb"><b>Gases react (const T, V)</b><br>① limiting, using atm as mol ② before / change / after ③ add what's left</div>
+<div class="pb"><b>Gases react</b> (sealed, T &amp; V const): treat atm like mol<br>① Before: write each gas's starting atm<br>② each reactant: atm ÷ its coef → smallest = limiting, call it x<br>③ Change: each gas moves coef × x (− reactants, + products)<br>④ After = Before + Change → P_total = add all After<br><i>e.g. 2A + B → C, 1 atm each: x = ½ → A 0, B 0.5, C 0.5 → 1.0 atm</i></div>
 <div class="pb"><b>Gas concepts</b><span class="sep"><i>asks assumptions:</i> ① no volume ② no attractions ③ random, elastic ④ KE ∝ T(K)</span><span class="sep"><i>manometer:</i> closed P = h · open P_atm ± h (+ if Hg up open side) · cm×10</span></div>
 </div>
 <div class="pcol">
 <div class="pb"><b>Chain</b><br>λ ↔ c = λν ↔ ν ↔ E = hν ↔ ×Nₐ ↔ /mol · E = hc/λ · λ in <u>m</u></div>
 <div class="pb"><b>Photons</b><br>① E_one = hc/λ ② # = E_tot (J) ÷ E_one<span class="sep"><i>asks per mole:</i> E_one × Nₐ</span></div>
 <div class="pb"><b>Bond → longest λ</b><br>① kJ/mol × 1000 ÷ Nₐ ② λ = hc/E ③ × 10⁹ for nm</div>
-<div class="pb"><b>Photoelectric</b><span class="sep"><i>λ + e⁻ speed → φ:</i> ① hc/λ ② − ½mₑv² ③ × Nₐ ÷ 1000</span><span class="sep"><i>threshold ν₀ ↔ φ:</i> φ = hν₀</span></div>
+<div class="pb"><b>Photoelectric</b><span class="sep"><i>λ + e⁻ speed → φ:</i> ① E = hc/λ ② φ = E − ½mₑv² ③ × Nₐ ÷ 1000 for kJ/mol</span><span class="sep"><i>threshold ν₀ ↔ φ:</i> φ = hν₀</span></div>
 <div class="pb big"><b>H-atom</b><br>① ΔE = −2.18E-18 (1/n_f² − 1/n_i²)<br>② sign: − = emit, + = absorb<br>③ λ = hc/|ΔE| · or ν = |ΔE|/h</div>
-<div class="pb"><b>Find n_i</b><br>① E = hc/λ (2 steps: add E's) ② 1/n_i² = 1/n_f² − E/2.18E-18 ③ n = 1/√</div>
+<div class="pb"><b>Find n_i</b><br>① E = hc/λ (2 steps: add E's) ② 1/n_i² = 1/n_f² − E/2.18E-18 ③ n_i = 1 ÷ √(answer of ②)</div>
 <div class="pb"><b>Light → heat</b><br>① q = melt (g/18.02 × 6010) + warm (g × 4.184 × ΔT), only the parts that happen ② ÷ eff ③ E_one = hc/λ ④ photons = q ÷ E_one → pulses = photons ÷ per pulse</div>
 <div class="pb"><b>de Broglie</b><br>① m in kg (1 atom: g/mol ÷ 1000 ÷ Nₐ) ② v in m/s ③ λ = h/mv</div>
 </div>
