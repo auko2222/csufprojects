@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Exam III Problem Finder</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=Patrick+Hand&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
 /* Layout: grid of problem-type cards, each = spot line, boxed formula, numbered steps, slip/fix */
 :root {
@@ -104,6 +104,16 @@ table.hw9 td:first-child { font-family: var(--mono); }
 table.hw9 td:nth-child(2) { font-family: var(--mono); font-weight: 600; color: var(--accent); }
 table.hw9 td:nth-child(4) { font-family: var(--sans); font-weight: 400; white-space: normal; }
 table.hw9 td:nth-child(3) { white-space: nowrap; }
+.paper { width: 8.5in; height: 11in; box-sizing: border-box; padding: 0.35in; background: #fffef8; color: #1d2433; border: 1px solid var(--line); box-shadow: 0 2px 10px rgba(0,0,0,.12); display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr auto; gap: 0 0.12in; font-family: "Patrick Hand", "Comic Sans MS", cursive, sans-serif; font-size: 14.5px; line-height: 1.22; margin: 0 auto; }
+.pcol { display: flex; flex-direction: column; gap: 6px; border-right: 1px dashed #b9c0cc; padding-right: 0.1in; min-width: 0; }
+.pcol:nth-child(3) { border-right: 0; padding-right: 0; }
+.pb { border: 1.2px solid #4a5568; border-radius: 3px; padding: 3px 5px; flex: 1 1 auto; }
+.pb b { color: #1f5fa8; }
+.pb.big { flex-grow: 1.6; }
+.pstrip { grid-column: 1 / -1; margin-top: 8px; border: 1.6px solid #a2471d; color: #a2471d; padding: 6px 8px; border-radius: 3px; }
+.pstrip b { color: #a2471d; }
+.pstrip ul { margin: 2px 0 0; padding-left: 16px; columns: 3; column-gap: 14px; }
+.pstrip li { break-inside: avoid; }
 </style>
 </head>
 <body>
@@ -111,7 +121,7 @@ table.hw9 td:nth-child(3) { white-space: nowrap; }
 <div class="wrap">
 <h1>CHEM 50 Exam III</h1>
 <p class="spot">QS = Quantum set · GPS = Gas Problem Set · GR = Gas Review · Exam = last year's Exam III</p>
-<div class="tabs" role="group" aria-label="View"><button type="button" id="tab-finder" aria-pressed="true">Problem finder</button><button type="button" id="tab-sheet" aria-pressed="false">Cheat sheet</button><button type="button" id="tab-mcq" aria-pressed="false">MCQ drill</button><button type="button" id="tab-hw9" aria-pressed="false">HW 9 answers</button></div>
+<div class="tabs" role="group" aria-label="View"><button type="button" id="tab-finder" aria-pressed="true">Problem finder</button><button type="button" id="tab-sheet" aria-pressed="false">Cheat sheet</button><button type="button" id="tab-paper" aria-pressed="false">My paper</button><button type="button" id="tab-mcq" aria-pressed="false">MCQ drill</button><button type="button" id="tab-hw9" aria-pressed="false">HW 9 answers</button></div>
 <div id="finder-view">
 
 <div class="search">
@@ -558,6 +568,41 @@ X⁻→X: −EA · X→X⁺: +I₁ · X⁴⁺→X³⁺: −I₄. × coefficients
 </div>
 </div>
 </div>
+<div id="paper-view" hidden>
+<div class="scroll"><div class="paper">
+<div class="pcol">
+<div class="pb"><b>PV = nRT</b><br>M = g/n · d = PM/RT<br>mol. formula: M ÷ M(emp)</div>
+<div class="pb"><b>Before → after</b><br>P₁V₁/T₁ = P₂V₂/T₂ (K!)</div>
+<div class="pb"><b>Mixtures</b><br>X = n/n_tot · P_A = X·P_tot<br>M_avg = ΣX·M → d = PM/RT<br>flasks: P = ΣPV / V_tot</div>
+<div class="pb"><b>Stoich</b><br>g→mol→ratio→mol→V = nRT/P<br>limiting first<br><u>final P = ALL gases left</u> (excess + H₂O(g))<br>sealed d = total g / V<br>2 fuels: x + y = n, x + 3y = mol CO₂</div>
+<div class="pb"><b>Air</b><br>C₈H₁₈ + 12.5 O₂ · C₆H₁₄ + 9.5 O₂<br>air = O₂ ÷ X · mL × density → g<br>backward: air × X ÷ 12.5 × 114.23 ÷ dens.</div>
+<div class="pb"><b>Over water</b><br>P_gas = P_atm − P_H₂O (table)</div>
+<div class="pb"><b>Gases react (const T, V)</b><br>atm = mol → before / change / after</div>
+<div class="pb"><b>Ideal gas assumptions</b><br>① no volume ② no attractions<br>③ random, elastic collisions ④ KE ∝ T(K)<br>Manometer: closed P = h · open P_atm ± h<br>(+ if Hg pushed up open side) · cm×10 = mm</div>
+</div>
+<div class="pcol">
+<div class="pb"><b>Chain</b><br>λ ↔ c = λν ↔ ν ↔ E = hν ↔ ×Nₐ ↔ /mol<br>E = hc/λ · λ in <u>m</u></div>
+<div class="pb"><b>Photons</b><br># = E_tot (J) ÷ E_one</div>
+<div class="pb"><b>Bond → longest λ</b><br>kJ/mol × 1000 ÷ Nₐ → λ = hc/E</div>
+<div class="pb"><b>Photoelectric</b><br>φ = hc/λ − ½ mₑ v²<br>ν₀ = φ/h · ×Nₐ ÷ 1000 → kJ/mol</div>
+<div class="pb big"><b>H-atom</b><br>ΔE = −2.18E-18 (1/n_f² − 1/n_i²)<br>− = emit, + = absorb<br>λ = hc/|ΔE| · ν = |ΔE|/h</div>
+<div class="pb"><b>Find n_i</b><br>1/n_i² = 1/n_f² − E/2.18E-18<br>2 steps: add E's</div>
+<div class="pb"><b>Light → heat</b><br>ice: g/18.02 × 6010 J<br>water: g × 4.184 × ΔT<br>÷ eff · pulses = q ÷ (photons × E_one)</div>
+<div class="pb"><b>de Broglie</b><br>λ = h/mv (kg, m/s)<br>1 atom: (g/mol ÷ 1000) ÷ Nₐ</div>
+</div>
+<div class="pcol">
+<div class="pb"><b>QN</b><br>n = 1, 2… · l = 0…n−1 (s p d f)<br>mₗ = −l…+l · mₛ ±½ · (4,1) = 4p</div>
+<div class="pb"><b>Fill order</b><br>1s 2s 2p 3s 3p 4s 3d 4p 5s 4d 5p 6s 4f 5d 6p<br>(Cr, Cu only exceptions)</div>
+<div class="pb"><b>Last e⁻</b><br>boxes −l → +l, all ↑ first, then ↓<br>count set: subshells × boxes × 2<br>reverse: QN → box → # e⁻ → Z<br>unpaired = single ↑</div>
+<div class="pb"><b>Ions</b><br>e⁻ = Z − charge · 4s leaves before 3d</div>
+<div class="pb"><b>Trends</b><br>radius ↓ across, ↑ down · IE opposite<br>isoelectronic: more p⁺ = smaller</div>
+<div class="pb"><b>IE jump</b><br># before jump = group</div>
+<div class="pb big"><b>ΔH from IE / EA</b><br>remove e⁻ +IE · add e⁻ EA · reverse = flip<br>X⁻→X: −EA · X→X⁺: +I₁ · X⁺→X²⁺: +I₂<br>X⁴⁺→X³⁺: −I₄ · X³⁺→X²⁺: −I₃<br>× coef, add · g: kJ ÷ ΔH × coef × M</div>
+</div>
+<div class="pstrip"><b>MY SLIPS → FIX</b>
+<ul><li>typed a×10^n, no ( ) → ( ) or EE</li><li>10⁻¹⁸ wrote 10¹⁸ → photon ~10⁻¹⁹ J, ν 10¹⁴–10¹⁶</li><li>÷ powers: added exp → SUBTRACT</li><li>1 atom: ×Nₐ → ÷Nₐ (~10⁻²⁶ kg)</li><li>km→m ÷1000 → ×1000</li><li>KE 10× off → (v)² first</li><li>answer in m, asked nm → ×10⁹ last</li><li>−15 °C → 288 → +273.15 = 258</li><li>rounded mol early → keep all digits</li><li>added used reactant → LEFTOVER only</li><li>O₂ = 16 → O₂ = 32.00</li><li>mixed conversions into fraction → 1 per line</li></ul></div>
+</div></div>
+</div>
 <div id="mcq-view" hidden>
 <div class="bar">
   <label for="mcq-set">Set</label>
@@ -682,7 +727,7 @@ var HW9=[
 </script>
 <script>
 (function(){
-  var views={finder:'finder-view',sheet:'sheet-view',mcq:'mcq-view',hw9:'hw9-view'};
+  var views={finder:'finder-view',sheet:'sheet-view',paper:'paper-view',mcq:'mcq-view',hw9:'hw9-view'};
   function show(k){ if(!views[k]) k='finder'; Object.keys(views).forEach(function(v){ document.getElementById(views[v]).hidden=(v!==k); var b=document.getElementById('tab-'+v); if(b) b.setAttribute('aria-pressed',String(v===k)); }); }
   Object.keys(views).forEach(function(v){ var b=document.getElementById('tab-'+v); if(b) b.addEventListener('click',function(){ location.hash=v; show(v); }); });
   window.addEventListener('hashchange',function(){ show(location.hash.slice(1)); }); show(location.hash.slice(1));
