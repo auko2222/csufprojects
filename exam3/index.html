@@ -117,6 +117,13 @@ table.hw9 td:nth-child(3) { white-space: nowrap; }
 .diag { display: block; width: 62%; height: auto; margin: 2px auto; font-family: inherit; }
 .pstrip ul { margin: 2px 0 0; padding-left: 16px; columns: 3; column-gap: 14px; }
 .pstrip li { break-inside: avoid; }
+.kpaper { width: 8.5in; height: 11in; overflow: hidden; box-sizing: border-box; padding: 0.35in; background: #fff; color: #1d2433; margin: 0 auto; border: 1px solid var(--line); font-size: 14px; line-height: 1.25; columns: 2; column-gap: 0.3in; }
+.kpaper h2 { column-span: all; font-size: 18px; margin: 0 0 6px; }
+.kpaper h3 { font-size: 15px; margin: 10px 0 3px; color: #1f4f8f; break-after: avoid; }
+.kpaper, .kpaper * { font-family: "IBM Plex Sans", system-ui, sans-serif; }
+.kr { display: grid; grid-template-columns: 46% 1fr; gap: 6px; padding: 4px 2px; border-bottom: 1px solid #e3e6ea; break-inside: avoid; }
+.kk { color: #5b6472; }
+.ka span { color: #8a94a6; font-weight: 400; }
 .pconst { grid-column: 1 / -1; margin-bottom: 6px; border: 1.4px solid #1d2433; padding: 4px 8px; border-radius: 3px; line-height: 1.35; }
 </style>
 </head>
@@ -125,7 +132,7 @@ table.hw9 td:nth-child(3) { white-space: nowrap; }
 <div class="wrap">
 <h1>CHEM 50 Exam III</h1>
 <p class="spot">QS = Quantum set · GPS = Gas Problem Set · GR = Gas Review · Exam = last year's Exam III</p>
-<div class="tabs" role="group" aria-label="View"><button type="button" id="tab-finder" aria-pressed="true">Problem finder</button><button type="button" id="tab-sheet" aria-pressed="false">Cheat sheet</button><button type="button" id="tab-paper" aria-pressed="false">My paper</button><button type="button" id="tab-mcq" aria-pressed="false">MCQ drill</button><button type="button" id="tab-hw9" aria-pressed="false">HW 9 answers</button></div>
+<div class="tabs" role="group" aria-label="View"><button type="button" id="tab-finder" aria-pressed="true">Problem finder</button><button type="button" id="tab-sheet" aria-pressed="false">Cheat sheet</button><button type="button" id="tab-paper" aria-pressed="false">My paper</button><button type="button" id="tab-mcq" aria-pressed="false">MCQ drill</button><button type="button" id="tab-keys" aria-pressed="false">MCQ list</button><button type="button" id="tab-hw9" aria-pressed="false">HW 9 answers</button></div>
 <div id="finder-view">
 
 <div class="search">
@@ -617,6 +624,14 @@ X⁻→X: −EA · X→X⁺: +I₁ · X⁴⁺→X³⁺: −I₄. × coefficients
 <div id="drill"></div>
 <div id="mcq-list" hidden></div>
 </div>
+<div id="keys-view" hidden>
+<div class="scroll"><div class="kpaper">
+<h2>MCQ answers: keyword → answer</h2>
+<h3>Gases (HW 7 #11–20, HW 8 #11–12)</h3><div class="ktab"><div class="kr"><div class="kk">Dalton's law</div><div class="ka"><b>total P = sum of the partial pressures</b> <span>(B)</span></div></div><div class="kr"><div class="kk">equal grams O₂ vs HBr, same V and T</div><div class="ka"><b>O₂ container has the higher pressure</b> <span>(C)</span></div></div><div class="kr"><div class="kk">speed graph, lowest density</div><div class="ka"><b>A, the flattest curve that peaks fastest</b> <span>(A)</span></div></div><div class="kr"><div class="kk">TRUE: effuse / light vs heavy / IMF / KE</div><div class="ka"><b>higher T = higher average KE</b> <span>(D)</span></div></div><div class="kr"><div class="kk">FALSE: about ideal gas molecules</div><div class="ka"><b>"all molecules have the same KE"</b> <span>(D)</span></div></div><div class="kr"><div class="kk">same average KE at the same…</div><div class="ka"><b>temperature</b> <span>(A)</span></div></div><div class="kr"><div class="kk">open manometer, 720 mmHg, Hg 12 mm higher on gas side</div><div class="ka"><b>708 mmHg</b> <span>(A)</span></div></div><div class="kr"><div class="kk">characteristics of gases</div><div class="ka"><b>A, B and C (all three)</b> <span>(E)</span></div></div><div class="kr"><div class="kk">greatest average speed at 25 °C</div><div class="ka"><b>CH₄ (lightest)</b> <span>(D)</span></div></div><div class="kr"><div class="kk">highest average KE at 25 °C</div><div class="ka"><b>all the same</b> <span>(E)</span></div></div><div class="kr"><div class="kk">P tripled, T quadrupled, V?</div><div class="ka"><b>× 4/3</b> <span>(B)</span></div></div><div class="kr"><div class="kk">closed manometer, h = 17.3 cm</div><div class="ka"><b>173 mmHg</b> <span>(A)</span></div></div></div>
+<h3>Quantum (HW 8 #13–20, Quantum set #1–7)</h3><div class="ktab"><div class="kr"><div class="kk">highest-energy wavelength</div><div class="ka"><b>3.50×10⁻⁹ m (shortest)</b> <span>(E)</span></div></div><div class="kr"><div class="kk">H vs He, same speed</div><div class="ka"><b>H's λ 4× longer</b> <span>(E)</span></div></div><div class="kr"><div class="kk">wave diagram (a) and (b)</div><div class="ka"><b>(a) wavelength, (b) amplitude</b> <span>(D)</span></div></div><div class="kr"><div class="kk">H vs He, same KE</div><div class="ka"><b>H's λ 2× longer</b> <span>(D)</span></div></div><div class="kr"><div class="kk">HW 8: QN not possible</div><div class="ka"><b>3, 0, 1, −½ (l = 0 needs mₗ = 0)</b> <span>(B)</span></div></div><div class="kr"><div class="kk">HW 8: highest-energy QN</div><div class="ka"><b>n = 4, l = 2 (4d)</b> <span>(B)</span></div></div><div class="kr"><div class="kk">increasing energy: 4p, 3d, 4s</div><div class="ka"><b>III < II < I (4s < 3d < 4p)</b> <span>(C)</span></div></div><div class="kr"><div class="kk">QN for a 5p electron</div><div class="ka"><b>5, 1, 0, +½</b> <span>(A)</span></div></div><div class="kr"><div class="kk">Q1 TRUE</div><div class="ka"><b>atoms are spherical because orbitals overlap</b> <span>(A)</span></div></div><div class="kr"><div class="kk">Q2 QN not possible</div><div class="ka"><b>3, 2, −3, −½ (answer choice D)</b> <span>(D)</span></div></div><div class="kr"><div class="kk">Q3 highest-energy QN</div><div class="ka"><b>n = 4, l = 2 (4d)</b> <span>(E)</span></div></div><div class="kr"><div class="kk">Q4 increase in energy</div><div class="ka"><b>4s → 3d</b> <span>(E)</span></div></div><div class="kr"><div class="kk">Q5 [Xe]6s²4f¹⁴5d¹⁰</div><div class="ka"><b>Hg</b> <span>(D)</span></div></div><div class="kr"><div class="kk">Q6 n = 3, l = 1</div><div class="ka"><b>3p</b> <span>(C)</span></div></div><div class="kr"><div class="kk">Q7 n = 4, l = 1</div><div class="ka"><b>4p</b> <span>(B)</span></div></div></div>
+<h3>Ch 9 (HW 9 #11–20)</h3><div class="ktab"><div class="kr"><div class="kk">not isoelectronic with Kr</div><div class="ka"><b>As³⁺</b> <span>(C)</span></div></div><div class="kr"><div class="kk">3d electrons in Fe³⁺</div><div class="ka"><b>5</b> <span>(D)</span></div></div><div class="kr"><div class="kk">ion with unpaired electrons</div><div class="ka"><b>Sc²⁺</b> <span>(C)</span></div></div><div class="kr"><div class="kk">increasing radius K⁺ P³⁻ S²⁻ Cl⁻</div><div class="ka"><b>K⁺ < Cl⁻ < S²⁻ < P³⁻</b> <span>(B)</span></div></div><div class="kr"><div class="kk">IE jump after I₄</div><div class="ka"><b>Si</b> <span>(E)</span></div></div><div class="kr"><div class="kk">IEs 589, 1145, 4900…</div><div class="ka"><b>Ca</b> <span>(D)</span></div></div><div class="kr"><div class="kk">greatest electron affinity</div><div class="ka"><b>Br</b> <span>(C)</span></div></div><div class="kr"><div class="kk">2 Li + 2 H₂O →</div><div class="ka"><b>2 LiOH + H₂</b> <span>(A)</span></div></div><div class="kr"><div class="kk">X bigger radius than Y</div><div class="ka"><b>X is more metallic</b> <span>(D)</span></div></div><div class="kr"><div class="kk">Mg I₂ vs Mg I₁, vs Na I₂</div><div class="ka"><b>higher, lower</b> <span>(D)</span></div></div></div>
+</div></div>
+</div>
 <div id="hw9-view" hidden>
 <div class="scroll"><table class="hw9"><thead><tr><th>#</th><th>Ans</th><th>Result</th><th>Why</th></tr></thead><tbody id="hw9-body"></tbody></table></div>
 </div>
@@ -732,7 +747,7 @@ var HW9=[
 </script>
 <script>
 (function(){
-  var views={finder:'finder-view',sheet:'sheet-view',paper:'paper-view',mcq:'mcq-view',hw9:'hw9-view'};
+  var views={finder:'finder-view',sheet:'sheet-view',paper:'paper-view',mcq:'mcq-view',keys:'keys-view',hw9:'hw9-view'};
   function show(k){ if(!views[k]) k='finder'; Object.keys(views).forEach(function(v){ document.getElementById(views[v]).hidden=(v!==k); var b=document.getElementById('tab-'+v); if(b) b.setAttribute('aria-pressed',String(v===k)); }); }
   Object.keys(views).forEach(function(v){ var b=document.getElementById('tab-'+v); if(b) b.addEventListener('click',function(){ location.hash=v; show(v); }); });
   window.addEventListener('hashchange',function(){ show(location.hash.slice(1)); }); show(location.hash.slice(1));
