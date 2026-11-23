@@ -104,7 +104,7 @@ table.hw9 td:first-child { font-family: var(--mono); }
 table.hw9 td:nth-child(2) { font-family: var(--mono); font-weight: 600; color: var(--accent); }
 table.hw9 td:nth-child(4) { font-family: var(--sans); font-weight: 400; white-space: normal; }
 table.hw9 td:nth-child(3) { white-space: nowrap; }
-.paper { width: 8.5in; height: 11in; box-sizing: border-box; padding: 0.35in; background: #fffef8; color: #1d2433; border: 1px solid var(--line); box-shadow: 0 2px 10px rgba(0,0,0,.12); display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: 1fr auto; gap: 0 0.12in; font-family: "Patrick Hand", "Comic Sans MS", cursive, sans-serif; font-size: 12.6px; line-height: 1.16; margin: 0 auto; overflow: hidden; }
+.paper { width: 8.5in; height: 11in; box-sizing: border-box; padding: 0.3in; background: #fffef8; color: #1d2433; border: 1px solid var(--line); box-shadow: 0 2px 10px rgba(0,0,0,.12); display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: auto 1fr auto; gap: 0 0.12in; font-family: "Patrick Hand", "Comic Sans MS", cursive, sans-serif; font-size: 11.6px; line-height: 1.15; margin: 0 auto; overflow: hidden; }
 .pcol { display: flex; flex-direction: column; gap: 6px; border-right: 1px dashed #b9c0cc; padding-right: 0.1in; min-width: 0; }
 .pcol:nth-child(3) { border-right: 0; padding-right: 0; }
 .pb { border: 1.2px solid #4a5568; border-radius: 3px; padding: 3px 5px; flex: 1 1 auto; }
@@ -117,6 +117,7 @@ table.hw9 td:nth-child(3) { white-space: nowrap; }
 .diag { display: block; width: 62%; height: auto; margin: 2px auto; font-family: inherit; }
 .pstrip ul { margin: 2px 0 0; padding-left: 16px; columns: 3; column-gap: 14px; }
 .pstrip li { break-inside: avoid; }
+.pconst { grid-column: 1 / -1; margin-bottom: 6px; border: 1.4px solid #1d2433; padding: 4px 8px; border-radius: 3px; line-height: 1.35; }
 </style>
 </head>
 <body>
@@ -573,6 +574,7 @@ X⁻→X: −EA · X→X⁺: +I₁ · X⁴⁺→X³⁺: −I₄. × coefficients
 </div>
 <div id="paper-view" hidden>
 <div class="scroll"><div class="paper">
+<div class="pconst"><b>CONSTANTS</b> h = 6.626×10⁻³⁴ J·s · c = 3.00×10⁸ m/s · Nₐ = 6.022×10²³ · R = 0.08206 L·atm/mol·K · R = 8.314 J/mol·K · R_H = 2.18×10⁻¹⁸ J · mₑ = 9.109×10⁻³¹ kg · mₙ = 1.675×10⁻²⁷ kg<br>STP: 273 K, 1 atm, 1 mol = 22.4 L · 1 atm = 760 mmHg = 760 torr = 101.3 kPa · K = °C + 273 · water: Cs 4.184 (ice 2.09, steam 1.84) J/g·°C, ΔHfus 6.02, ΔHvap 40.79 kJ/mol, 18.02 g/mol</div>
 <div class="pcol">
 <div class="pb"><b>PV = nRT</b><span class="sep"><i>asks P, V, n, T:</i> PV = nRT</span><span class="sep"><i>asks M:</i> n = PV/RT → M = g/n</span><span class="sep"><i>asks d:</i> d = PM/RT</span><span class="sep"><i>asks molecular formula:</i> M ÷ M(emp)</span><span class="sep"><i>at STP</i> (273 K, 1 atm): 1 mol = 22.4 L</span></div>
 <div class="pb"><b>Before → after</b><br>P₁V₁/T₁ = P₂V₂/T₂ (K!) · cross out constants</div>
