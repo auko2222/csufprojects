@@ -10,16 +10,16 @@
 /* Layout: grid of problem-type cards, each = spot line, boxed formula, numbered steps, slip/fix */
 :root {
   --bg: #f6f7f9; --card: #ffffff; --fg: #1b2230; --muted: #6a7384;
-  --line: #dde1e8; --accent: #1f5fa8; --box: #eef3fa; --warn: #a2471d;
+  --line: #dde1e8; --accent: #1f5fa8; --box: #eef3fa; --warn: #a2471d; --ok: #1e7a45; --okbg: #e6f4ec; --badbg: #fbece6;
   --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #12161d; --card: #1a2029; --fg: #e5e9f0; --muted: #98a2b3;
-  --line: #2c3442; --accent: #7fb0ec; --box: #1f2a3a; --warn: #f0a07a; color-scheme: dark } }
+  --line: #2c3442; --accent: #7fb0ec; --box: #1f2a3a; --warn: #f0a07a; --ok: #6fd39a; --okbg: #173325; --badbg: #3a2219; color-scheme: dark } }
 :root[data-theme="dark"] {
   --bg: #12161d; --card: #1a2029; --fg: #e5e9f0; --muted: #98a2b3;
-  --line: #2c3442; --accent: #7fb0ec; --box: #1f2a3a; --warn: #f0a07a; color-scheme: dark }
+  --line: #2c3442; --accent: #7fb0ec; --box: #1f2a3a; --warn: #f0a07a; --ok: #6fd39a; --okbg: #173325; --badbg: #3a2219; color-scheme: dark }
 body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.45; }
 .wrap { max-width: 1180px; margin: 0 auto; padding-block: 20px 40px;
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
@@ -77,6 +77,33 @@ nav.jump a { color: var(--accent); }
 .box:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .box .exp { display: block; margin-top: 4px; padding: 5px 6px; background: var(--box); border-radius: 3px; font-size: 1.05em; line-height: 1.4; }
 .box .hint { float: right; font-size: .78em; color: var(--accent); font-weight: 600; }
+.bar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 0 0 12px; }
+.bar label { font-weight: 600; }
+.bar select { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--fg); }
+.seg { display: flex; gap: 4px; }
+.seg button, .qbtn, .nav button { font: inherit; padding: 7px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--card); color: var(--fg); cursor: pointer; }
+.seg button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.qcard { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 14px; max-width: 760px; display: grid; gap: 10px; }
+.qmeta { color: var(--muted); font-size: .85rem; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.qtext { font-weight: 600; margin: 0; }
+.opts { display: grid; gap: 6px; }
+.qbtn { text-align: left; display: flex; gap: 8px; }
+.qbtn:hover:not(:disabled) { border-color: var(--accent); }
+.qbtn:disabled { cursor: default; }
+.qbtn .L { font-family: var(--mono); font-weight: 600; }
+.qbtn.right { border-color: var(--ok); background: var(--okbg); }
+.qbtn.wrong { border-color: var(--warn); background: var(--badbg); }
+.why { margin: 0; padding: 8px 10px; background: var(--box); border-radius: 6px; }
+.nav { display: flex; gap: 8px; flex-wrap: wrap; }
+.nav button.primary { background: var(--accent); color: var(--card); border-color: var(--accent); font-weight: 600; }
+.qlist { display: grid; gap: 10px; max-width: 760px; }
+.qlist .opt { padding: 2px 0; }
+.qlist .opt.right { color: var(--ok); font-weight: 600; }
+table.hw9 th { text-align: left; padding: 4px 6px; border-bottom: 2px solid var(--line); font-size: .85rem; color: var(--muted); }
+table.hw9 td:first-child { font-family: var(--mono); }
+table.hw9 td:nth-child(2) { font-family: var(--mono); font-weight: 600; color: var(--accent); }
+table.hw9 td:nth-child(4) { font-family: var(--sans); font-weight: 400; white-space: normal; }
+table.hw9 td:nth-child(3) { white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -84,7 +111,7 @@ nav.jump a { color: var(--accent); }
 <div class="wrap">
 <h1>CHEM 50 Exam III</h1>
 <p class="spot">QS = Quantum set · GPS = Gas Problem Set · GR = Gas Review · Exam = last year's Exam III</p>
-<div class="tabs" role="group" aria-label="View"><button type="button" id="tab-finder" aria-pressed="true">Problem finder</button><button type="button" id="tab-sheet" aria-pressed="false">Cheat sheet</button></div>
+<div class="tabs" role="group" aria-label="View"><button type="button" id="tab-finder" aria-pressed="true">Problem finder</button><button type="button" id="tab-sheet" aria-pressed="false">Cheat sheet</button><button type="button" id="tab-mcq" aria-pressed="false">MCQ drill</button><button type="button" id="tab-hw9" aria-pressed="false">HW 9 answers</button></div>
 <div id="finder-view">
 
 <div class="search">
@@ -531,6 +558,18 @@ X⁻→X: −EA · X→X⁺: +I₁ · X⁴⁺→X³⁺: −I₄. × coefficients
 </div>
 </div>
 </div>
+<div id="mcq-view" hidden>
+<div class="bar">
+  <label for="mcq-set">Set</label>
+  <select id="mcq-set"><option value="">All (37)</option><option>HW 7</option><option>HW 8</option><option>HW 9</option><option>Quantum set</option></select>
+  <div class="seg" role="group" aria-label="Mode"><button type="button" id="mode-drill" aria-pressed="true">Drill</button><button type="button" id="mode-list" aria-pressed="false">All answers</button></div>
+</div>
+<div id="drill"></div>
+<div id="mcq-list" hidden></div>
+</div>
+<div id="hw9-view" hidden>
+<div class="scroll"><table class="hw9"><thead><tr><th>#</th><th>Ans</th><th>Result</th><th>Why</th></tr></thead><tbody id="hw9-body"></tbody></table></div>
+</div>
 </div>
 <script>
 (function(){
@@ -566,17 +605,6 @@ X⁻→X: −EA · X→X⁺: +I₁ · X⁴⁺→X³⁺: −I₄. × coefficients
 </script>
 <script>
 (function(){
-  var f=document.getElementById('finder-view'), sh=document.getElementById('sheet-view');
-  var tf=document.getElementById('tab-finder'), ts=document.getElementById('tab-sheet');
-  function show(which){ var isS=which==='sheet'; sh.hidden=!isS; f.hidden=isS; ts.setAttribute('aria-pressed',isS); tf.setAttribute('aria-pressed',!isS); }
-  tf.addEventListener('click',function(){ show('finder'); if(location.hash==='#sheet') location.hash='finder'; });
-  ts.addEventListener('click',function(){ show('sheet'); location.hash='sheet'; });
-  function fromHash(){ show(location.hash==='#sheet'?'sheet':'finder'); }
-  window.addEventListener('hashchange',fromHash); fromHash();
-})();
-</script>
-<script>
-(function(){
   var X={"Always": "Every formula wants SI-style units: λ in m, mass in kg, energy in J, T in K, P in atm (for R = 0.08206). Convert first, then plug in. Calculator: 6.022×10²³ typed as 6.022 × 10 ^ 23 without parentheses gets split, so the calculator multiplies by 10²³ when you meant to divide. Wrap each number in ( ) or use EE. After you get an answer, check that its size makes sense. A photon at 10⁶¹ m or an atom weighing 0.02 kg means a typing error.", "G1 One gas": "Use this when the gas sits still in one set of conditions. PV = nRT links all four. Solve for the unknown with letters first (n = PV/RT), then plug in. Molar mass: find n with PV/RT, then M = grams ÷ n. Density: d = PM/RT (comes from substituting n = g/M). Ex: 2.00 g O₂ at 25 °C and 1.00 atm: n = 0.0625 mol, V = 0.0625 × 0.08206 × 298.15 ÷ 1.00 = 1.53 L. Molecular formula: M(gas) ÷ M(empirical) gives the multiplier, e.g. 56 ÷ 14 (CH₂) = 4, so C₄H₈.", "G2 Before → after": "The same gas changes conditions, so n stays the same and nR cancels out of PV/T on both sides. Cross out whatever is held constant. Ex: 1.0 L at 1.0 atm and 300 K goes to 2.0 atm and 400 K. V₂ = P₁V₁T₂ ÷ (T₁P₂) = 0.67 L. Direction check: pressure doubled shrinks V, heating grows it a bit, so the net is smaller. T must be in K, because °C ratios are meaningless (0 °C isn't zero energy).", "G3 Mixtures": "Each gas acts like it's alone. Mole fraction X = its share of the moles, and its partial pressure is that share of the total. '% by volume' is the same as mole fraction. Mixture density: average molar mass weighted by X, then d = PM/RT. Flasks opened: each gas spreads into the total volume, so total P = (P₁V₁ + P₂V₂ + …) ÷ V_total. The answer must land between the lowest and highest starting pressure.", "G4 Gas stoichiometry": "Coefficients are mole ratios, so everything goes through moles. Get mol of what you're given (g ÷ M, molarity × L, or PV/RT for a gas). If two amounts are given, find the limiting one (whichever makes less product). Then use the ratio to get mol of what you want, then convert out (V = nRT/P or g = mol × M). Final pressure in a sealed tank: add up the moles of every gas there after the reaction, including leftover excess reactant and H₂O(g), then P = nRT/V. Two fuels burned (CH₄ + C₃H₈): let x and y be their moles. x + y = n_total (from PV/RT), and carbons: 1x + 3y = mol CO₂. Solve the two equations.", "G5 Fuel + air": "Air is only about 21% O₂, so you need more air than O₂: mol air = mol O₂ ÷ X(O₂). Chain: mL fuel × density = g → ÷ M = mol fuel → × 12.5 (octane) = mol O₂ → ÷ 0.2095 = mol air → V = nRT/P. To balance: CₓHᵧ needs x O₂ for the CO₂ plus y/4 O₂ for the water. Octane: 8 + 18/4 = 12.5. Hexane: 6 + 14/4 = 9.5. Backward (air given, find fuel): run the same chain in reverse.", "G6 Over water": "Gas bubbled through water picks up water vapor, so the measured pressure is your gas plus water vapor. Subtract the water's vapor pressure (from the table, at that temperature) to get just your gas, then use PV = nRT. Ex: 760 mmHg total at 25 °C (water 23.8): P_gas = 736.2 mmHg ÷ 760 = 0.969 atm. Your professor treats 'over HCl(aq)' and other aqueous solutions the same way.", "G7 Gases react, P given": "With T and V fixed, P is proportional to n, so you can use atm in place of moles in the coefficient ratios. Ex: A + 2B → C with 2.00 atm each. B runs out first (it needs twice as much). B uses 2.00, A uses 1.00, C makes 1.00. Left: A 1.00 + C 1.00 = 2.00 atm. The flask volume isn't needed.", "G8 Manometer · KMT": "Manometer: the mercury gets pushed away from the side with more pressure. Closed tube (vacuum on top): the gas alone holds up the column, so P = h. Open tube: compare with the atmosphere. If the mercury is pushed up the open side, the gas is stronger: P_atm + h. If it's pushed up the gas side, the gas is weaker: P_atm − h. KMT: all gases at the same T have the same average KE, so lighter molecules must move faster (KE = ½mv²). Ideal gas assumptions: molecules take up no volume, have no attractions, move randomly with elastic collisions, and average KE ∝ T in kelvin.", "Ch 8 chain": "Every light problem gives you one of λ, ν or E and asks for another. c = λν links wavelength and frequency (all light moves at c). E = hν links frequency to the energy of one photon. × Nₐ scales one photon up to a mole. Find your start and end on the chain and walk through it. Longer λ means lower ν and lower E.", "L1–L2 Photon": "E = hc/λ is the energy of ONE photon. To count photons in a flash: total energy (in J) ÷ energy of one photon. Ex: 400 nm → 4.97×10⁻¹⁹ J per photon. 1.00 J ÷ 4.97×10⁻¹⁹ = 2.01×10¹⁸ photons. A mole of visible photons is ~150–300 kJ, which makes a good sanity check.", "L3 Bond → longest λ": "One photon breaks one bond, so it needs at least the energy of ONE bond. Tables give kJ per mole of bonds, so × 1000 (to J) and ÷ Nₐ (to one bond). Then λ = hc/E. It's the 'longest' λ because longer λ means a weaker photon, and this is the weakest one that still works. Ex: 400 kJ/mol → 6.64×10⁻¹⁹ J → 299 nm.", "L4 Photoelectric": "The photon's energy pays the binding energy φ (the 'exit fee'), and whatever is left becomes the electron's kinetic energy: hc/λ = φ + ½mv². Electron mass is 9.11×10⁻³¹ kg. Square v before multiplying. Threshold frequency: the photon has just enough energy and KE = 0, so φ = hν₀. φ comes out per electron in J. × Nₐ ÷ 1000 gives kJ/mol. Brighter light means more photons, not stronger ones, so it never changes whether electrons come off.", "L5 H-atom, n's given": "Each level in hydrogen has energy −2.18×10⁻¹⁸/n² J. It's negative because the electron is bound, and 0 means free. ΔE = final − initial. Falling to lower n gives negative ΔE: energy leaves as a photon (emitted). Going up gives positive ΔE (absorbed). The photon's energy is the size of ΔE. Then λ = hc/|ΔE| or ν = |ΔE|/h. Ex: 3 → 2 gives 656 nm (red line).", "L6 H-atom, find n_i": "Same equation, solved for the starting level. Photon energy E = hc/λ. Then 1/n_i² = 1/n_f² − E/2.18×10⁻¹⁸. Take 1 ÷ that, then √, and you should land near a whole number. If the electron falls in two steps, the total drop is the sum of both photon energies, so add them and use the final level. Ex: a 434 nm photon ending at n = 2 → n_i = 5.", "L7 Light as heat": "First find how much heat the job needs, in J. Melting ice: mol × 6010 J/mol. Warming water: g × 4.184 × ΔT. If the device is only 63.5% efficient, you need more light: q ÷ 0.635. Then photons = J needed ÷ J per photon (hc/λ). Pulses = J needed ÷ J per pulse, where J per pulse = photons per pulse × J per photon. The answer is a count, so it must be a normal-size number.", "L8 de Broglie": "Anything moving has a wavelength λ = h/(mv). More momentum means a shorter wave. m must be in kg and v in m/s. For one atom or ion: molar mass g/mol ÷ 1000 gives kg/mol, then ÷ Nₐ gives kg for one atom (~10⁻²⁶ kg). Divide, because you're splitting a mole's mass into single atoms. km/s × 1000 = m/s. Electrons come out ~10⁻¹⁰ m, atoms ~10⁻¹³ m.", "Ch 8 concepts": "Brightness (amplitude) = how many photons. Color (λ) = energy of each photon. Spectrum from low to high energy: radio, microwave, infrared, visible (red to violet), UV, X-ray, gamma. Emission = the electron falls and gives off light (bright lines). Absorption = it jumps up and takes light in (dark lines). An element absorbs and emits at the same λ. Uncertainty: you can't know an electron's exact position and speed at the same time.", "P1 Quantum numbers": "The four numbers are an electron's address, and each is limited by the one before it. n = shell (1, 2, 3…). l = shape, from 0 to n−1 (0 s, 1 p, 2 d, 3 f), so shell 2 has s and p but no d. mₗ = which box, from −l to +l (p has −1, 0, +1, which is 3 boxes). mₛ = spin, +½ or −½. 'Not possible' means some number breaks its rule: l = n, |mₗ| > l, or mₛ not ±½. Subshell name = n plus the letter for l: (4, 1, …) = 4p.", "P2 Fill / energy order": "Electrons fill the lowest-energy subshell first, in this order (read it off the periodic table rows: s block, then d one shell back, then p). 4s fills before 3d because 4s is slightly lower in energy for a neutral atom. Higher energy = later in the list. 'Increase in energy' means going to a later subshell (e.g. 4s → 3d). Your professor only uses Cr and Cu as exceptions (half-filled and full d is extra stable).", "P3–P4 Configs + last e⁻": "Write the configuration, then draw the boxes for the last subshell, labeled mₗ from −l to +l. Put one ↑ (+½) in each box left to right first (Hund's rule), then go back and add ↓ (−½). Wherever the last electron lands gives its mₗ and mₛ. Ex: Fe 3d⁶: five ↑ fill −2…+2, and the 6th is ↓ in box −2 → (3, 2, −2, −½). Counting electrons for a set with blanks: list every real subshell that fits, count the boxes allowed, × 2 (or × 1 if mₛ is fixed). Unpaired = boxes with a single arrow. Any unpaired → paramagnetic.", "P5 Ions": "Electrons = Z − charge (a negative charge adds electrons). Write the neutral atom first. For cations, remove from the highest n first, so 4s electrons leave before 3d even though 4s filled first. Ex: Fe [Ar]4s²3d⁶ → Fe³⁺ [Ar]3d⁵ (5 d electrons, all unpaired). Isoelectronic = same number of electrons (Kr = 36: Br⁻, Rb⁺, Sr²⁺, Se²⁻ all have 36).", "P6 Trends": "Two causes. (1) A higher shell n is farther out: bigger and easier to remove, which wins first. (2) In the same row, more protons with the same shielding (higher Zeff) pull tighter: smaller, harder to remove. So radius shrinks across a row and grows down a group. Ionization energy and electron affinity size go the opposite way. Isoelectronic ions: same electrons, so more protons pull them in tighter (P³⁻ > S²⁻ > Cl⁻ > K⁺). Bigger atoms lose electrons easily, so they're more metallic.", "P7 Successive IE": "Pulling off valence electrons costs a gradually increasing amount. The first core electron (one shell closer in) costs hugely more. So count the electrons removed before the big jump: that's the number of valence electrons, which gives the group. Ex: 590, 1145, 4900 → jump after 2 → group 2 (Ca). For Mg, I₂ > I₁ (removing from a + ion is harder), but Mg's I₂ < Na's I₂ (Na's 2nd electron is core).", "P8 ΔH from IE / EA": "Break the reaction into single-electron steps and add their energies. Removing an electron costs its ionization energy (+IE). Adding an electron to a neutral atom releases its electron affinity (use the table's sign, usually negative). Running a step backward flips the sign: X⁻ → X is −EA, and C⁴⁺ → C³⁺ is −I₄ (adding an electron back releases what removing it cost). Multiply by coefficients and add. Grams needed for some kJ: kJ wanted ÷ ΔH = mol of reaction, × coefficient = mol of that species, × M = g."};
   document.querySelectorAll('#sheet-view .box').forEach(function(b){
     var t=b.querySelector('b.t'); if(!t) return; var txt=X[t.textContent.trim()]; if(!txt) return;
@@ -587,6 +615,125 @@ X⁻→X: −EA · X→X⁺: +I₁ · X⁴⁺→X³⁺: −I₄. × coefficients
     b.addEventListener('click',tog);
     b.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); tog(); } });
   });
+})();
+</script>
+<script>
+var MCQ=[
+{s:"HW 7",n:11,q:"Which of the following describes Dalton's Law?",o:["The temperature of a gas is proportional to its volume.","The total pressure of a gas mixture is the sum of the partial pressures of each gas in the mixture.","Only one variable can be changed from an initial state to a final state for a gas.","The pressure of a gas is proportional to its volume."],a:1,w:"Dalton = partial pressures add up: P_total = P_A + P_B + …"},
+{s:"HW 7",n:12,q:"If equal masses of O₂(g) and HBr(g) are in separate containers of equal volume and temperature, which one of these statements is true?",o:["The average kinetic energy of HBr molecules is greater than that of O₂ molecules.","The average velocity of the O₂ molecules is less than that of the HBr molecules.","The pressure in the O₂ container is greater than that in the HBr container.","There are more HBr molecules than O₂ molecules.","The pressures of both gases are the same."],a:2,w:"Same grams, but O₂ (32) is lighter than HBr (80.9), so more moles of O₂ → higher P. Same T → same KE; lighter O₂ is faster."},
+{s:"HW 7",n:13,q:"Using the graph (speed distributions at the same T: curve D is tallest and peaks at the lowest speed; A is the flattest, peaking near 1100 m/s), determine the gas that has the lowest density at STP.",o:["A","B","C","D","All of the gases have the same density at STP."],a:0,w:"Fastest gas = lightest molar mass = lowest density (d = PM/RT). A peaks at the highest speed."},
+{s:"HW 7",n:14,q:"Which of the following statements is TRUE?",o:["The smaller a gas particle, the slower it will effuse.","At a given temperature, lighter gas particles travel more slowly than heavier gas particles.","At low temperatures, intermolecular forces become important and the pressure of a gas will be higher than predicted by the ideal gas law.","The higher the temperature, the higher the average kinetic energy of the sample.","None of the above statements is true."],a:3,w:"KE ∝ T. A and B are backwards; attractions make real P lower, not higher (C)."},
+{s:"HW 7",n:15,q:"Which statement is false?",o:["Molecules of greater mass have a lower average speed than those of less mass at the same temperature.","Molecules of a gas undergo many collisions with each other and the container walls.","The average kinetic energies of molecules from samples of different \"ideal\" gases are the same at the same temperature.","All molecules of an ideal gas have the same kinetic energy at constant temperature.","The molecules of an ideal gas are relatively far apart."],a:3,w:"Only the AVERAGE KE is fixed by T. Individual molecules have a spread of speeds and energies."},
+{s:"HW 7",n:16,q:"The molecules of different samples of an ideal gas have the same average kinetic energies, at the same",o:["temperature.","pressure.","volume.","density."],a:0,w:"Average KE depends only on T (in K)."},
+{s:"HW 7",n:17,q:"What is the pressure of the gas trapped in the apparatus when the atmospheric pressure is 720 mmHg? (Gas on the left arm, air on the open right arm; mercury on the gas side stands 12 mm higher than on the open side.)",o:["708 mmHg","12 mmHg","760 mmHg","732 mmHg","720 mmHg"],a:0,w:"Mercury pushed up toward the gas → the gas is weaker than air: 720 − 12 = 708 mmHg."},
+{s:"HW 7",n:18,q:"Which of these properties is/are characteristic(s) of gases?",o:["Relatively large distances between molecules","Formation of homogeneous mixtures regardless of the nature of gases","High compressibility","A and B.","A, B, and C."],a:4,w:"All three are true: mostly empty space, gases always mix completely, and they compress easily."},
+{s:"HW 7",n:19,q:"Which gas has molecules with the greatest average molecular speed at 25 °C?",o:["Ar","N₂","Kr","CH₄","CO₂"],a:3,w:"Same T → lightest is fastest. CH₄ = 16 g/mol is the lightest."},
+{s:"HW 7",n:20,q:"Which of these gas molecules has the highest average kinetic energy at 25 °C?",o:["O₂","H₂","Cl₂","N₂","All the gases have the same average kinetic energy."],a:4,w:"Same T → same average KE, regardless of mass."},
+{s:"HW 8",n:11,q:"If the pressure of a gas sample is tripled and the absolute temperature is quadrupled, by what factor will the volume of the sample change?",o:["4","4/3","3/4","1/3","12"],a:1,w:"V ∝ T/P = 4/3."},
+{s:"HW 8",n:12,q:"What is the pressure (mmHg) of the gas trapped in a closed-tube mercury manometer (vacuum at the top) if atmospheric pressure is 751 mmHg and h = 17.3 cm?",o:["173 mmHg","473 mmHg","373 mmHg","273 mmHg","None of the Above"],a:0,w:"Closed tube: P_gas = h = 17.3 cm = 173 mmHg. Atmospheric pressure is a distractor."},
+{s:"HW 8",n:13,q:"Which of the following wavelengths of electromagnetic radiation has the highest energy?",o:["225 nm","2.50 × 10⁻⁵ m","450. nm","8.40 × 10⁻⁷ m","3.50 × 10⁻⁹ m"],a:4,w:"Shortest λ = highest energy. 3.50×10⁻⁹ m = 3.5 nm, the shortest."},
+{s:"HW 8",n:14,q:"If a hydrogen atom and a helium atom are traveling at the same speed,",o:["the wavelength of the hydrogen atom will be roughly equal to the wavelength of the helium atom.","the wavelength of the helium atom will be about 2 times longer than the wavelength of the hydrogen atom.","the wavelength of the hydrogen atom will be about 2 times longer than the wavelength of the helium.","the wavelength of the helium atom will be about 4 times longer than the wavelength of the hydrogen atom.","the wavelength of the hydrogen atom will be about 4 times longer than the wavelength of the helium atom."],a:4,w:"λ = h/mv. Same v, He is 4× heavier → H's λ is 4× longer."},
+{s:"HW 8",n:15,q:"In a wave diagram, (a) is the distance from one crest to the next and (b) is the height of a crest above the center line. Which is correct?",o:["(a) is amplitude and (b) is wavelength","(a) is amplitude and (b) is frequency","(a) is wavelength and (b) is frequency","(a) is wavelength and (b) is amplitude","(a) is frequency and (b) is amplitude"],a:3,w:"Crest-to-crest = wavelength. Height = amplitude."},
+{s:"HW 8",n:16,q:"If a hydrogen atom and a helium atom have the same kinetic energy,",o:["the wavelength of the helium atom will be about 2 times longer than the wavelength of the hydrogen atom.","the wavelength of the hydrogen atom will be roughly equal to the wavelength of the helium atom.","the wavelength of the helium atom will be about 4 times longer than the wavelength of the hydrogen atom.","the wavelength of the hydrogen atom will be about 2 times longer than the wavelength of the helium.","the wavelength of the hydrogen atom will be about 4 times longer than the wavelength of the helium atom."],a:3,w:"Same KE → mv = √(2m·KE), so λ ∝ 1/√m. √4 = 2 → H's λ is 2× longer."},
+{s:"HW 8",n:17,q:"Which one of the following sets of quantum numbers is not possible? (n, l, mₗ, mₛ)  A: 4, 3, −2, +½ · B: 3, 0, 1, −½ · C: 3, 0, 0, +½ · D: 2, 1, 1, −½ · E: 2, 0, 0, +½",o:["A","B","C","D","E"],a:1,w:"l = 0 allows only mₗ = 0. Set B has mₗ = 1."},
+{s:"HW 8",n:18,q:"Which one of the following sets of quantum numbers represents an electron with the highest energy?",o:["n = 5, l = 0, mₗ = 0, mₛ = +½","n = 4, l = 2, mₗ = −1, mₛ = −½","n = 4, l = 1, mₗ = 0, mₛ = −½","n = 4, l = 0, mₗ = 0, mₛ = +½","n = 3, l = 2, mₗ = −2, mₛ = +½"],a:1,w:"Name them: 5s, 4d, 4p, 4s, 3d. Fill order … 4s 3d 4p 5s 4d → 4d is last = highest."},
+{s:"HW 8",n:19,q:"List in order of increasing energy:  I. n = 4, l = 1, mₗ = 1, mₛ = +½  II. n = 3, l = 2, mₗ = −1, mₛ = +½  III. n = 4, l = 0, mₗ = 0, mₛ = +½",o:["I < III < II","I < II < III","III < II < I","II < III < I","III < I < II"],a:2,w:"I = 4p, II = 3d, III = 4s. Order 4s < 3d < 4p → III < II < I."},
+{s:"HW 8",n:20,q:"A possible set of quantum numbers to describe an electron in a 5p subshell is",o:["n = 5, l = 1, mₗ = 0, mₛ = +½","n = 4, l = 0, mₗ = 0, mₛ = −½","n = 3, l = 1, mₗ = 1, mₛ = −½","n = 5, l = 0, mₗ = 0, mₛ = +½","n = 5, l = 2, mₗ = 2, mₛ = +½"],a:0,w:"5p → n = 5, l = 1 (p). mₗ = 0 is allowed."},
+{s:"HW 9",n:11,q:"Which one of the following is not isoelectronic with Kr?",o:["Sr²⁺","Br⁻","As³⁺","Se²⁻","Rb⁺"],a:2,w:"Kr has 36 e⁻. As³⁺ = 33 − 3 = 30. The rest all have 36."},
+{s:"HW 9",n:12,q:"How many 3d electrons does an Fe³⁺ ion have?",o:["9","4","3","5","6"],a:3,w:"Fe [Ar]4s²3d⁶ → lose 4s² first, then one 3d → [Ar]3d⁵."},
+{s:"HW 9",n:13,q:"Which of the following ground-state ions has unpaired electrons?",o:["V⁵⁺","P³⁻","Sc²⁺","S²⁺ (likely a typo for S²⁻)","Mg²⁺"],a:2,w:"Sc²⁺ = [Ar]3d¹, one unpaired. The others are noble-gas configurations. (S²⁺ as printed would be 3s²3p², also unpaired, so the intended ion is S²⁻.)"},
+{s:"HW 9",n:14,q:"Arrange the following ions in order of increasing ionic radius: K⁺, P³⁻, S²⁻, Cl⁻",o:["P³⁻ < S²⁻ < Cl⁻ < K⁺","K⁺ < Cl⁻ < S²⁻ < P³⁻","Cl⁻ < S²⁻ < K⁺ < P³⁻","K⁺ < P³⁻ < S²⁻ < Cl⁻","Cl⁻ < S²⁻ < P³⁻ < K⁺"],a:1,w:"All have 18 e⁻. More protons pulls tighter: K⁺ (19 p) smallest, P³⁻ (15 p) biggest."},
+{s:"HW 9",n:15,q:"Which element has this pattern for its first six ionization energies? (I₁–I₄ rise gradually, then a large jump at I₅, I₆ higher still.)",o:["Al","Ca","Se","P","Si"],a:4,w:"4 IEs before the jump → 4 valence e⁻ → group 14 → Si."},
+{s:"HW 9",n:16,q:"The successive ionization energies of a certain element are I₁ = 589.5, I₂ = 1145, I₃ = 4900, I₄ = 6500, I₅ = 8100 kJ/mol. This pattern suggests that the unknown element is",o:["Si","S","K","Ca","As"],a:3,w:"Big jump after I₂ → 2 valence e⁻ → group 2 → Ca."},
+{s:"HW 9",n:17,q:"Which of the following atoms has the greatest electron affinity (largest positive value)?",o:["Ga","Li","Br","S","P"],a:2,w:"Halogens want an electron most. Br is the only halogen."},
+{s:"HW 9",n:18,q:"What are the products of the following reaction? 2 Li(s) + 2 H₂O(l) →",o:["2 LiOH(aq) + H₂(g)","LiO₂(s) + 2 H₂(g)","Li₂O₂(s) + 2 H₂(g)","2 Li(s) + 2 H₂O(l)","2 Li₂O(s) + 2 H₂(g)"],a:0,w:"Alkali metal + water → metal hydroxide + hydrogen gas."},
+{s:"HW 9",n:19,q:"If the radius of atom X is greater than the radius of atom Y, then it is also likely that",o:["X has a larger effective nuclear charge than Y does.","X has a larger first ionization energy than Y does.","X has a larger electron affinity than Y does.","X has greater metallic character than Y does.","X is a poorer conductor of electricity than Y when in the solid state."],a:3,w:"Bigger atom → holds electrons loosely → more metallic. A, B, C all go the other way."},
+{s:"HW 9",n:20,q:"The second ionization energy of Mg is ____ than its first ionization energy, and is ____ than the second ionization energy of Na.",o:["higher, higher","lower, higher","lower, lower","higher, lower"],a:3,w:"I₂ > I₁ always. Na's 2nd electron is a core electron (huge), Mg's 2nd is still valence → Mg I₂ is lower."},
+{s:"Quantum set",n:1,q:"Which of the following statements is TRUE?",o:["Atoms are roughly spherical because when all of the different shaped orbitals are overlapped, they take on a spherical shape.","We can sometimes know the exact location and speed of an electron at the same time.","An electron has a well-defined position.","All orbitals in a given atom are roughly the same size.","Since electrons have mass, we must always consider them to have particle properties and never wavelike properties."],a:0,w:"B and C break the uncertainty principle; orbitals grow with n (D); electrons act as waves too (E)."},
+{s:"Quantum set",n:2,q:"Which one of the following sets of quantum numbers is not possible? (n, l, mₗ, mₛ)  A: 4, 3, −2, +½ · B: 3, 2, −3, −½ · C: 3, 0, 0, +½ · D: 4, 1, 1, −½ · E: 2, 0, 0, +½",o:["D","C","E","B","A"],a:3,w:"Set B: l = 2 allows mₗ −2…+2, not −3. Careful: set B is answer choice D."},
+{s:"Quantum set",n:3,q:"Which one of the following sets of quantum numbers represents an electron with the highest energy?",o:["n = 4, l = 1, mₗ = 0, mₛ = −½","n = 5, l = 0, mₗ = 0, mₛ = +½","n = 3, l = 2, mₗ = −2, mₛ = +½","n = 4, l = 0, mₗ = 0, mₛ = +½","n = 4, l = 2, mₗ = −1, mₛ = −½"],a:4,w:"4p, 5s, 3d, 4s, 4d. 4d fills last → highest."},
+{s:"Quantum set",n:4,q:"Which of the following electronic transitions is consistent with an increase in energy?",o:["From a 4f subshell to a 6s subshell","From a 5d subshell to a 6s subshell","From a 4d subshell to a 5s subshell","From a 5p subshell to a 4d subshell","From a 4s subshell to a 3d subshell"],a:4,w:"Increase = moving to a later subshell in the fill order. 4s → 3d goes later; the others go earlier."},
+{s:"Quantum set",n:5,q:"Which element has the ground-state electron configuration [Xe]6s²4f¹⁴5d¹⁰?",o:["Lu","Cd","Au","Hg","Lr"],a:3,w:"54 + 2 + 14 + 10 = 80 → Hg."},
+{s:"Quantum set",n:6,q:"The quantum numbers n = 3, l = 1, mₗ = 0, mₛ = +½ represent an electron in a ____ subshell.",o:["3s","None of the above","3p","3f","3d"],a:2,w:"n = 3, l = 1 (p) → 3p."},
+{s:"Quantum set",n:7,q:"The quantum numbers n = 4, l = 1, mₗ = 1, mₛ = +½ represent an electron in a ____ subshell.",o:["3s","4p","3p","4s","None of the above"],a:1,w:"n = 4, l = 1 (p) → 4p."}
+];
+var HW9=[
+[1,"B","2.92 L","mol HCl = 0.275 × 0.725 = 0.1994 → ÷ 2 = 0.0997 mol H₂ (Mg + 2HCl → MgCl₂ + H₂). V = nRT/P = 0.0997 × 0.08206 × 303.25 ÷ 0.85."],
+[2,"A","11.7 L","2KClO₃ → 2KCl + 3O₂. 22.4/122.55 = 0.1828 mol × 3/2 = 0.2742 mol O₂. V = nRT/P at 426.15 K, 0.820 atm."],
+[3,"D","7.86 atm","2H₂ + O₂ → 2H₂O(g). H₂ 2.480 mol (limiting), O₂ 1.5625. Left: 2.480 H₂O + 0.3225 O₂ = 2.80 mol. P = nRT/V at 308.15 K, 9.00 L."],
+[4,"D","3.00 g/L","Mass never changes in a sealed vessel: (10.0 + 6.50) g ÷ 5.50 L."],
+[5,"E","≈ 7.5×10³ L","3780 mL × 0.81 = 3062 g ÷ 114.23 = 26.8 mol octane × 12.5 = 335 mol O₂ × 22.4 = 7.5×10³ L. Not listed → None of the above."],
+[6,"B","493 nm","242.8 kJ/mol × 1000 ÷ Nₐ = 4.032×10⁻¹⁹ J per bond. λ = hc/E. (Same as Quantum set Q18.)"],
+[7,"C","353 kJ/mol","E photon = hc/310 nm = 6.41×10⁻¹⁹ J. KE = ½(9.11×10⁻³¹)(3.45×10⁵)² = 5.42×10⁻²⁰ J. φ = 5.87×10⁻¹⁹ J × Nₐ ÷ 1000. (Quantum Q19.)"],
+[8,"C","2.12×10³ pulses","Ice: 10.0/18.02 × 6010 = 3335 J. One pulse = 5.00×10¹⁸ × 3.14×10⁻¹⁹ J = 1.57 J. 3335 ÷ 1.57. (Quantum Q20.)"],
+[9,"E","n = 4","Total photon E = hc/1870 nm + hc/102.5 nm = 2.045×10⁻¹⁸ J = 2.18×10⁻¹⁸(1 − 1/n²) → n = 4."],
+[10,"C","1.72×10²¹ photons","q = 10.0 × 4.184 × 10.0 = 418.4 J ÷ 0.635 = 658.9 J of light. ÷ (hc/520 nm = 3.82×10⁻¹⁹ J)."],
+[11,"C","As³⁺","Kr = 36 e⁻; As³⁺ has 30."],
+[12,"D","5","Fe³⁺ = [Ar]3d⁵ (4s leaves first)."],
+[13,"C","Sc²⁺","[Ar]3d¹. Option D prints S²⁺, likely a typo for S²⁻; as printed it would also have unpaired electrons."],
+[14,"B","K⁺ < Cl⁻ < S²⁻ < P³⁻","Isoelectronic (18 e⁻): more protons = smaller."],
+[15,"E","Si","Jump after I₄ → group 14."],
+[16,"D","Ca","Jump after I₂ → group 2."],
+[17,"C","Br","Halogen; most eager to gain an electron."],
+[18,"A","2 LiOH(aq) + H₂(g)","Alkali metal + water → hydroxide + H₂."],
+[19,"D","more metallic","Bigger atom → lower IE, lower Zeff → more metallic."],
+[20,"D","higher, lower","I₂ > I₁; Na's I₂ removes a core electron, so it's bigger than Mg's I₂."]
+];
+</script>
+<script>
+(function(){
+  var views={finder:'finder-view',sheet:'sheet-view',mcq:'mcq-view',hw9:'hw9-view'};
+  function show(k){ if(!views[k]) k='finder'; Object.keys(views).forEach(function(v){ document.getElementById(views[v]).hidden=(v!==k); var b=document.getElementById('tab-'+v); if(b) b.setAttribute('aria-pressed',String(v===k)); }); }
+  Object.keys(views).forEach(function(v){ var b=document.getElementById('tab-'+v); if(b) b.addEventListener('click',function(){ location.hash=v; show(v); }); });
+  window.addEventListener('hashchange',function(){ show(location.hash.slice(1)); }); show(location.hash.slice(1));
+  // HW 9 table
+  var tb=document.getElementById('hw9-body');
+  HW9.forEach(function(r){ var tr=document.createElement('tr'); r.forEach(function(c){ var td=document.createElement('td'); td.textContent=c; tr.appendChild(td); }); tb.appendChild(tr); });
+  // MCQ
+  var L='ABCDE', sel=document.getElementById('mcq-set'), drill=document.getElementById('drill'), list=document.getElementById('mcq-list');
+  var mD=document.getElementById('mode-drill'), mL=document.getElementById('mode-list');
+  var deck=[], i=0, score=0, misses=[];
+  function pool(){ var s=sel.value; return MCQ.filter(function(q){ return !s||q.s===s; }); }
+  function shuffle(a){ a=a.slice(); for(var k=a.length-1;k>0;k--){ var j=Math.floor(Math.random()*(k+1)); var t=a[k]; a[k]=a[j]; a[j]=t; } return a; }
+  function el(t,c,txt){ var e=document.createElement(t); if(c) e.className=c; if(txt!=null) e.textContent=txt; return e; }
+  function start(qs){ deck=shuffle(qs); i=0; score=0; misses=[]; render(); }
+  function render(){
+    drill.innerHTML='';
+    var card=el('div','qcard');
+    if(i>=deck.length){
+      card.appendChild(el('p','qtext','Score: '+score+' / '+deck.length+(deck.length?' ('+Math.round(100*score/deck.length)+'%)':'')));
+      if(misses.length){ var ml=el('div'); misses.forEach(function(q){ ml.appendChild(el('div',null,q.s+' #'+q.n+': '+L[q.a]+') '+q.o[q.a])); }); card.appendChild(ml); }
+      var nav=el('div','nav');
+      if(misses.length){ var b1=el('button','primary','Drill my misses ('+misses.length+')'); b1.type='button'; var m=misses.slice(); b1.onclick=function(){ start(m); }; nav.appendChild(b1); }
+      var b2=el('button',misses.length?'':'primary','Start over'); b2.type='button'; b2.onclick=function(){ start(pool()); }; nav.appendChild(b2);
+      card.appendChild(nav); drill.appendChild(card); return;
+    }
+    var q=deck[i];
+    var meta=el('div','qmeta'); meta.appendChild(el('span',null,'Question '+(i+1)+' of '+deck.length+' · '+q.s+' #'+q.n)); meta.appendChild(el('span',null,'Score '+score+' / '+i)); card.appendChild(meta);
+    card.appendChild(el('p','qtext',q.q));
+    var opts=el('div','opts'), btns=[];
+    q.o.forEach(function(t,k){ var b=el('button','qbtn'); b.type='button'; b.appendChild(el('span','L',L[k]+')')); b.appendChild(el('span',null,t)); b.onclick=function(){ answer(k); }; btns.push(b); opts.appendChild(b); });
+    card.appendChild(opts);
+    var after=el('div'); after.style.display='grid'; after.style.gap='10px'; card.appendChild(after);
+    function answer(k){
+      btns.forEach(function(b,j){ b.disabled=true; if(j===q.a) b.classList.add('right'); });
+      if(k===q.a) score++; else { btns[k].classList.add('wrong'); misses.push(q); }
+      after.appendChild(el('p','why',(k===q.a?'Correct. ':'Answer: '+L[q.a]+'. ')+q.w));
+      var nav=el('div','nav'), n=el('button','primary',i+1<deck.length?'Next':'See score'); n.type='button'; n.onclick=function(){ i++; render(); }; nav.appendChild(n); after.appendChild(nav); n.focus();
+    }
+    drill.appendChild(card);
+  }
+  function renderList(){
+    list.innerHTML=''; var wrap=el('div','qlist');
+    pool().forEach(function(q){ var c=el('div','qcard'); c.appendChild(el('div','qmeta',q.s+' #'+q.n)); c.appendChild(el('p','qtext',q.q));
+      q.o.forEach(function(t,k){ c.appendChild(el('div','opt'+(k===q.a?' right':''),L[k]+') '+t+(k===q.a?'  ✓':''))); });
+      c.appendChild(el('p','why',q.w)); wrap.appendChild(c); });
+    list.appendChild(wrap);
+  }
+  function mode(m){ var d=m==='drill'; drill.hidden=!d; list.hidden=d; mD.setAttribute('aria-pressed',String(d)); mL.setAttribute('aria-pressed',String(!d)); if(!d) renderList(); }
+  mD.onclick=function(){ mode('drill'); }; mL.onclick=function(){ mode('list'); };
+  sel.onchange=function(){ start(pool()); if(!list.hidden) renderList(); };
+  start(pool());
 })();
 </script>
 </body>
